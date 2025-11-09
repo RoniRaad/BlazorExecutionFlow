@@ -6,6 +6,7 @@ using DrawflowWrapper.Drawflow.BaseNodes;
 using DrawflowWrapper.Helpers;
 using DrawflowWrapper.Models;
 using DrawflowWrapper.Models.DTOs;
+using DrawflowWrapper.Models.NodeV2;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using static DrawflowWrapper.Helpers.DrawflowHelpers;
@@ -48,6 +49,7 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
  
     protected string ElementId => Id ?? $"df_{GetHashCode():x}";
 
+    private static JsonSerializerOptions jsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -75,19 +77,7 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
     {
         if (name == "connectionCreated")
         {
-            var payload = JsonSerializer.Deserialize<List<DfConnectionCreatedEventPayload>>(payloadJson);
-            var drawflowExportObj = await Editor.ExportAsync();
-            var drawflowJson = JsonSerializer.Serialize(drawflowExportObj);
-            if (drawflowJson != null)
-            {
-                var graph = DrawflowGraph.Parse(this, drawflowJson);
-                var connectionPayload = payload[0];
-                var connection = graph.GetConnection(connectionPayload.OutputId, connectionPayload.OutputClass, connectionPayload.InputId, connectionPayload.InputClass);
-                if (connection.InputPortTypeName != connection.OutputPortTypeName)
-                {
-                     await Editor.RemoveConnectionAsync(int.Parse(connection.FromNodeId), int.Parse(connection.ToNodeId), connection.FromOutputPort, connection.ToInputPort);
-                }
-            }
+            return;
         }
 
         if (OnEvent.HasDelegate)
@@ -138,6 +128,82 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
         }
     }
 
+    public Graph GenerateGraph(DrawflowGraph graph)
+    { 
+        var concurentNodeDict = new ConcurrentDictionary<string, Node>();
+
+        var nodesDict = graph
+            .Page
+            .Data
+            .ToDictionary(x => x.Key, x => GenerateNode(graph, x.Value, concurentNodeDict));
+
+        var returnGraph = new Graph()
+        {
+            Nodes = concurentNodeDict
+        };
+
+        return returnGraph;
+    }
+
+    public Node GenerateNode(DrawflowGraph graph, DrawflowNode node, ConcurrentDictionary<string, Node>? createdNodes = null)
+    {
+        createdNodes ??= [];
+
+        if (createdNodes.TryGetValue(node.Id.ToString(), out var value))
+        {
+            return value;
+        }
+
+        var inputEdges = graph.GetIncoming(node.Id.ToString());
+        var inputNodes = new List<DrawflowNode>();
+
+        var outputEdges = graph.GetOutgoing(node.Id.ToString());
+        var outputNodes = new List<DrawflowNode>();
+
+        foreach (var inputEdge in inputEdges)
+        {
+            var otherNodeId = inputEdge.FromNodeId;
+            var otherNode = graph.GetNode(otherNodeId);
+            inputNodes.Add(otherNode);
+        }
+
+        foreach (var outputEdge in outputEdges)
+        {
+            var otherNodeId = outputEdge.ToNodeId;
+            var otherNode = graph.GetNode(otherNodeId);
+            outputNodes.Add(otherNode);
+        }
+
+        var internalNode = JsonSerializer.Deserialize<Node>(node.Data["node"].ToString(), jsonSerializerOptions);
+        createdNodes[node.Id.ToString()] = internalNode!;
+
+        internalNode!.InputNodes = [..inputNodes.Select(x => GenerateNode(graph, x, createdNodes))];
+        internalNode!.OutputNodes = [..outputNodes.Select(x => GenerateNode(graph, x, createdNodes))];
+
+        return internalNode;
+    }
+
+    public async Task<Graph?> CreateInternalV2Graph()
+    {
+        if (Editor is null)
+        {
+            return null;
+        }
+
+        var drawflowExportObj = await Editor.ExportAsync();
+        var drawflowJson = JsonSerializer.Serialize(drawflowExportObj);
+        if (drawflowJson is null)
+        {
+            return null;
+        }
+
+        var graph = DrawflowGraph.Parse(this, drawflowJson);
+        JsonSerializerOptions options = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+        var internalGraph = GenerateGraph(graph);
+        return internalGraph;
+    }
+
     public ConcurrentDictionary<string, DrawflowNodeExecutionGraph> nodes = [];
 
     public DrawflowExecutionEdge CreateExecutionEdge(DrawflowGraph drawflowGraph, Edge edge)
@@ -147,8 +213,6 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
             FromNodeId = edge.FromNodeId,
             ToNodeId = edge.ToNodeId,
             FromOutputPortId = edge.FromOutputPort,
-            InputPortTypeName = edge.InputPortTypeName,
-            OutputPortTypeName = edge.OutputPortTypeName,
             ToInputPortId = edge.ToInputPort,
         };
 
@@ -547,7 +611,7 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
         {
             if (JS is not null && _created)
             {
-                await JS.InvokeVoidAsync("DrawflowBlazor.destroy", ElementId);
+              //  await JS.InvokeVoidAsync("DrawflowBlazor.destroy", ElementId);
             }
         }
         catch { /* ignore */ }

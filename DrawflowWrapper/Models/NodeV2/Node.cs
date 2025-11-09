@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using DrawflowWrapper.Helpers;
 
 namespace DrawflowWrapper.Models.NodeV2
@@ -8,13 +9,20 @@ namespace DrawflowWrapper.Models.NodeV2
     public class Node
     {
         private readonly SemaphoreSlim _executionSemaphore = new(1);
+        [JsonConverter(typeof(MethodInfoJsonConverter))]
         public required MethodInfo BackingMethod { get; set; }
         public string Id { get; set; } = Guid.NewGuid().ToString();
-        public List<Node> InputNodes { get; set; } = [];
-        public List<Node> OutputNodes { get; set; } = [];
+        public string Section { get; set; } = string.Empty;
+        public string DrawflowNodeId { get; set; } = string.Empty;
         public Dictionary<string, string> NodeInputToMethodInputMap { get; set; } = [];
         public Dictionary<string, string> MethodOutputToNodeOutputMap { get; set; } = [];
+
+        [JsonIgnore]
         public JsonObject? Result { get; set; }
+        [JsonIgnore]
+        public List<Node> InputNodes { get; set; } = [];
+        [JsonIgnore]
+        public List<Node> OutputNodes { get; set; } = [];
 
         public async Task<JsonObject> GetResult(Node caller)
         {

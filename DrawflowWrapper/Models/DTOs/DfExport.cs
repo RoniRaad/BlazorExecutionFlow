@@ -63,8 +63,6 @@ public sealed record DfExport
         public string FromOutputPort { get; init; } = ""; // e.g., "output_1"
         public string ToNodeId { get; init; } = "";
         public string ToInputPort { get; init; } = "";    // e.g., "input_2"
-        public string InputPortTypeName { get; set; } = "";
-        public string OutputPortTypeName { get; set; } = "";
 
         public override string ToString()
             => $"{FromNodeId}:{FromOutputPort} -> {ToNodeId}:{ToInputPort}";
@@ -171,29 +169,12 @@ public sealed record DfExport
                         if (string.IsNullOrWhiteSpace(conn.Node) || string.IsNullOrWhiteSpace(conn.Output))
                             continue;
 
-                        var otherNode = page.Data[conn.Node];
-
-                        otherNode.Data.TryGetValue("inputTypePortMap", out var inputMapObj);
-                        node.Data.TryGetValue("outputTypePortMap", out var outputMapObj);
-
-                        //  var map = (Dictionary<string, string>)outputMapObj;
-                        var outputMapString = JsonSerializer.Serialize(outputMapObj);
-                        var inputMapString = JsonSerializer.Serialize(inputMapObj);
-
-                        var outputMap = JsonSerializer.Deserialize<Dictionary<int, string>>(outputMapString);
-                        var inputMap = JsonSerializer.Deserialize<Dictionary<int, string>>(inputMapString);
-
-                        var inputPortNumber = int.Parse(conn.Output[(conn.Output.IndexOf('_')+1)..]);
-                        var outputPortNumber = int.Parse(outPortName[(outPortName.IndexOf('_')+1)..]);
-
                         edges.Add(new Edge
                         {
                             FromNodeId = nodeId,
                             FromOutputPort = outPortName,   // "output_1"
                             ToNodeId = conn.Node,            // e.g., "2"
                             ToInputPort = conn.Output,        // "input_1"
-                            InputPortTypeName = inputMap[inputPortNumber - 1],
-                            OutputPortTypeName = outputMap[outputPortNumber - 1],
                         });
                     }
                 }

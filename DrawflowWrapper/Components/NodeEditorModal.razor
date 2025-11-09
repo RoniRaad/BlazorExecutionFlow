@@ -1,8 +1,9 @@
 ﻿@using System.Reflection
 @using DrawflowWrapper.Models.NodeV2
+@using Microsoft.AspNetCore.Components.Forms
 
 <!-- Node editor modal -->
-<div class="modal fade node-editor-modal"
+<div style="display:block;" class="modal fade show node-editor-modal"
      id="nodeEditorModal"
      tabindex="-1"
      aria-labelledby="nodeEditorLabel"
@@ -67,7 +68,7 @@
                             <div class="panel-section" data-role="function-input-map">
                                 <div class="panel-section-header">
                                     <span>Function input map</span>
-                                    <button type="button"
+                                    <button onclick="@(() => ViewModel.NodeInputToMethodInputMap.Add(new()))" type="button"
                                             class="btn btn-xs btn-outline-secondary"
                                             data-role="add-input-mapping">
                                         Add mapping
@@ -76,32 +77,35 @@
 
                                 <div class="mapping-list" data-role="input-mapping-list">
                                     <!-- Template row; duplicate dynamically -->
-                                    <div class="mapping-row" data-role="input-mapping-row">
-                                        <div class="mapping-col">
-                                            <label>Payload path</label>
-                                            <input type="text"
-                                                   class="form-control form-control-sm"
-                                                   placeholder="e.g. user.name"
-                                                   data-role="payload-path" />
+                                    @foreach (var inputMapping in ViewModel.NodeInputToMethodInputMap)
+                                    {
+                                        <div class="mapping-row" data-role="input-mapping-row">
+                                            <div class="mapping-col">
+                                                <label>Payload path</label>
+                                                <InputText @bind-Value="inputMapping.Input" type="text"
+                                                       class="form-control form-control-sm"
+                                                       placeholder="e.g. user.name"
+                                                       data-role="payload-path" />
+                                            </div>
+                                            <div class="mapping-arrow">→</div>
+                                            <div class="mapping-col">
+                                                <label>Parameter</label>
+                                                <InputSelect @bind-Value="inputMapping.Output" class="form-select form-select-sm" data-role="parameter-name">
+                                                    <option value="">Select parameter…</option>
+                                                    @foreach (var param in BackingNode?.BackingMethod?.GetParameters() ?? [])
+                                                    {
+                                                        <option value="@param.Name">(@param.ParameterType.Name) @param.Name</option>
+                                                    }
+                                                </InputSelect>
+                                            </div>
+                                            <button onclick="@(() => RemoveNodeInputToMethodInputMap(inputMapping))" type="button"
+                                                    class="btn btn-icon btn-xs"
+                                                    title="Remove"
+                                                    data-role="remove-mapping">
+                                                ✕
+                                            </button>
                                         </div>
-                                        <div class="mapping-arrow">→</div>
-                                        <div class="mapping-col">
-                                            <label>Parameter</label>
-                                            <select class="form-select form-select-sm" data-role="parameter-name">
-                                                <option value="">Select parameter…</option>
-                                                @foreach (var param in BackingNode?.BackingMethod?.GetParameters() ?? [])
-                                                {
-                                                    <option value="@param.Name">@param.Name</option>
-                                                }
-                                            </select>
-                                        </div>
-                                        <button type="button"
-                                                class="btn btn-icon btn-xs"
-                                                title="Remove"
-                                                data-role="remove-mapping">
-                                            ✕
-                                        </button>
-                                    </div>
+                                    }
                                 </div>
                             </div>
 
@@ -111,7 +115,7 @@
                             <div class="panel-section" data-role="function-output-map">
                                 <div class="panel-section-header">
                                     <span>Function output map</span>
-                                    <button type="button"
+                                    <button onclick="@(() => ViewModel.MethodOutputToNodeOutputMap.Add(new()))" type="button"
                                             class="btn btn-xs btn-outline-secondary"
                                             data-role="add-output-mapping">
                                         Add mapping
@@ -119,35 +123,47 @@
                                 </div>
 
                                 <div class="mapping-list" data-role="output-mapping-list">
-                                    <!-- Template row; duplicate dynamically -->
-                                    @foreach (var outputMapping in ViewModel.MethodOutputToNodeOutputMap)
+                                    @{ var propInfos = GetReturnProperties(); };
+                                    @if (propInfos is not null)
                                     {
-                                        <div class="mapping-row" data-role="output-mapping-row">
-                                            <div class="mapping-col">
-                                                <label>Function output</label>
-                                                <select class="form-select form-select-sm" data-role="function-output">
-                                                    <option value="">Select output…</option>
-                                                    @foreach (var property in GetReturnProperties())
-                                                    {
-                                                        <option value="@property.Name">@property.Name</option>
-                                                    }
-                                                </select>
+                                        @foreach (var outputMapping in ViewModel.MethodOutputToNodeOutputMap)
+                                        {
+                                            <div class="mapping-row" data-role="output-mapping-row">
+                                                <div class="mapping-col">
+                                                    <label>Function output</label>
+                                                    <InputSelect @bind-Value="outputMapping.Input" class="form-select form-select-sm" data-role="function-output">
+                                                        <option value="">Select output…</option>
+
+                                                        @if (propInfos.Count() > 0)
+                                                        {
+                                                            @foreach (var property in propInfos)
+                                                            {
+                                                                <option value="@property.Name">(@property.PropertyType.Name) @property.Name</option>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <option value="result">(@BackingNode.BackingMethod.ReturnType.Name) result</option>
+                                                        }
+
+                                                    </InputSelect>
+                                                </div>
+                                                <div class="mapping-arrow">→</div>
+                                                <div class="mapping-col">
+                                                    <label>Payload path</label>
+                                                    <InputText @bind-Value="outputMapping.Output" type="text"
+                                                               class="form-control form-control-sm"
+                                                               placeholder="e.g. result.value"
+                                                               data-role="target-payload-path" />
+                                                </div>
+                                                <button onclick="@(() => RemoveMethodOutputToNodeOutputMap(outputMapping))" type="button"
+                                                        class="btn btn-icon btn-xs"
+                                                        title="Remove"
+                                                        data-role="remove-mapping">
+                                                    ✕
+                                                </button>
                                             </div>
-                                            <div class="mapping-arrow">→</div>
-                                            <div class="mapping-col">
-                                                <label>Payload path</label>
-                                                <input @bind="@outputMapping.Value" type="text"
-                                                       class="form-control form-control-sm"
-                                                       placeholder="e.g. result.value"
-                                                       data-role="target-payload-path" />
-                                            </div>
-                                            <button type="button"
-                                                    class="btn btn-icon btn-xs"
-                                                    title="Remove"
-                                                    data-role="remove-mapping">
-                                                ✕
-                                            </button>
-                                        </div>
+                                        }
                                     }
                                 </div>
                             </div>
@@ -198,12 +214,12 @@
             </div>
 
             <div class="modal-footer node-editor-footer">
-                <button type="button"
+                <button onclick="@(() => CloseRequested.InvokeAsync())" type="button"
                         class="btn btn-outline-secondary"
                         data-bs-dismiss="modal">
                     Cancel
                 </button>
-                <button type="button"
+                <button onclick="@(() => SaveMappings())" type="button"
                         class="btn btn-primary"
                         data-role="save-node">
                     Save mappings
@@ -213,264 +229,10 @@
     </div>
 </div>
 
-<style>
-    .node-editor-dialog {
-        max-width: 1120px;
-        width: 100%;
-        margin: 0 auto;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-    }
-
-    .node-editor-content {
-        background: radial-gradient(circle at top, #111827, #020617 55%, #020617 100%);
-        color: #e5e7eb;
-        border-radius: 1.25rem;
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.85);
-        height: 80vh;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    .node-editor-header {
-        border-bottom: 1px solid rgba(31, 41, 55, 0.9);
-        padding: 0.85rem 1.25rem;
-        align-items: flex-start;
-    }
-
-    .node-editor-header .modal-title {
-        font-weight: 600;
-        letter-spacing: 0.02em;
-    }
-
-    .node-editor-subtitle {
-        margin: 0;
-        font-size: 0.8rem;
-        color: #9ca3af;
-    }
-
-    .node-editor-body {
-        padding: 1rem 1.25rem 0.75rem;
-        flex: 1;
-        overflow: hidden;
-    }
-
-    .node-editor-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr) minmax(0, 0.9fr);
-        gap: 0.9rem;
-        height: 100%;
-    }
-
-    .node-editor-panel {
-        background: rgba(15, 23, 42, 0.9);
-        border-radius: 0.9rem;
-        border: 1px solid rgba(55, 65, 81, 0.9);
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    .panel-header {
-        padding: 0.75rem 0.9rem 0.5rem;
-        border-bottom: 1px solid rgba(31, 41, 55, 0.9);
-    }
-
-    .panel-header h6 {
-        margin: 0.25rem 0 0;
-        font-size: 0.9rem;
-        font-weight: 600;
-    }
-
-    .panel-caption {
-        margin: 0.15rem 0 0;
-        font-size: 0.75rem;
-        color: #9ca3af;
-    }
-
-    .panel-body {
-        padding: 0.75rem 0.9rem 0.9rem;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        overflow: hidden;
-    }
-
-    .panel-body-scroll {
-        overflow: hidden;
-    }
-
-    .panel-section {
-        background: rgba(15, 23, 42, 0.9);
-        border-radius: 0.65rem;
-        padding: 0.55rem 0.65rem 0.65rem;
-        border: 1px solid rgba(31, 41, 55, 0.9);
-        display: flex;
-        flex-direction: column;
-        gap: 0.45rem;
-    }
-
-    .panel-section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: #e5e7eb;
-    }
-
-    .panel-divider {
-        margin: 0.65rem 0;
-        border-color: rgba(31, 41, 55, 0.9);
-    }
-
-    .pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.15rem 0.5rem;
-        border-radius: 999px;
-        font-size: 0.7rem;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-
-    .pill-input {
-        background: rgba(22, 163, 74, 0.15);
-        color: #bbf7d0;
-        border: 1px solid rgba(22, 163, 74, 0.7);
-    }
-
-    .pill-processing {
-        background: rgba(59, 130, 246, 0.18);
-        color: #bfdbfe;
-        border: 1px solid rgba(59, 130, 246, 0.75);
-    }
-
-    .pill-output {
-        background: rgba(245, 158, 11, 0.18);
-        color: #fed7aa;
-        border: 1px solid rgba(245, 158, 11, 0.75);
-    }
-
-    .payload-preview {
-        flex: 1;
-        border-radius: 0.6rem;
-        border: 1px solid rgba(31, 41, 55, 0.9);
-        background: radial-gradient(circle at top, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 1));
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 0.75rem;
-        padding: 0.6rem 0.65rem;
-        color: #e5e7eb;
-        overflow: auto;
-        white-space: pre;
-    }
-
-    .payload-preview--output {
-        min-height: 120px;
-    }
-
-    .payload-field-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.3rem;
-        max-height: 120px;
-        overflow: auto;
-    }
-
-    .payload-field-chip {
-        border-radius: 999px;
-        border: 1px solid rgba(55, 65, 81, 0.9);
-        background: rgba(15, 23, 42, 0.9);
-        font-size: 0.7rem;
-        padding: 0.15rem 0.55rem;
-        color: #e5e7eb;
-        cursor: pointer;
-    }
-
-    .payload-field-chip:hover {
-        border-color: rgba(96, 165, 250, 0.9);
-    }
-
-    .mapping-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
-        max-height: 180px;
-        overflow: auto;
-    }
-
-    .mapping-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1.1fr) auto minmax(0, 1.1fr) auto;
-        gap: 0.35rem;
-        align-items: end;
-    }
-
-    .mapping-col label {
-        font-size: 0.7rem;
-        color: #9ca3af;
-        margin-bottom: 0.15rem;
-    }
-
-    .mapping-arrow {
-        font-size: 0.9rem;
-        color: #9ca3af;
-        text-align: center;
-        padding-bottom: 0.2rem;
-    }
-
-    .btn-xs {
-        --bs-btn-padding-y: 0.15rem;
-        --bs-btn-padding-x: 0.45rem;
-        --bs-btn-font-size: 0.7rem;
-        border-radius: 999px;
-    }
-
-    .btn-icon {
-        border-radius: 999px;
-        border: 1px solid rgba(55, 65, 81, 0.9);
-        background: rgba(15, 23, 42, 1);
-        width: 1.5rem;
-        height: 1.5rem;
-        padding: 0;
-        font-size: 0.75rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: #9ca3af;
-    }
-
-    .btn-icon:hover {
-        border-color: rgba(248, 113, 113, 0.9);
-        color: #fecaca;
-    }
-
-    .node-editor-footer {
-        border-top: 1px solid rgba(31, 41, 55, 0.9);
-        padding: 0.7rem 1.25rem;
-    }
-
-    .node-editor-footer .btn {
-        font-size: 0.85rem;
-    }
-
-    @@media (max-width: 992px) {
-        .node-editor-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .node-editor-content {
-            height: 90vh;
-        }
-    }
-</style>
-
 @code {
+    [Parameter]
+    public EventCallback CloseRequested { get; set; }
+
     [Parameter]
     public required Node? BackingNode { get; set; }
 
@@ -480,16 +242,47 @@
     [Parameter]
     public string? OutputPayloadJson { get; set; }
 
-    public NodeEditorModalViewModel ViewModel { get; set; }
+    public NodeEditorModalViewModel ViewModel { get; set; } = new();
 
-    public PropertyInfo[] GetReturnProperties()
+    public PropertyInfo[]? GetReturnProperties()
     {
-        return BackingNode?.BackingMethod?.ReturnType?.GetProperties(BindingFlags.Instance | BindingFlags.Public) ?? [];
+        var methodReturnType = BackingNode?.BackingMethod?.ReturnType;
+        if (methodReturnType == typeof(void) || methodReturnType == typeof(Task))
+        {
+            return null;
+        }
+
+        var returnProperties = methodReturnType?.GetProperties(BindingFlags.Instance | BindingFlags.Public) ?? [];
+        return returnProperties;
+    }
+
+    private void SaveMappings()
+    {
+        BackingNode.MethodOutputToNodeOutputMap = ViewModel.MethodOutputToNodeOutputMap.ToDictionary(x => x.Input, x => x.Output);
+        BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap.ToDictionary(x => x.Input, x => x.Output);
+    }
+
+    private void RemoveMethodOutputToNodeOutputMap(InputOutputMapViewModel viewModel)
+    {
+        ViewModel.MethodOutputToNodeOutputMap.Remove(viewModel);
+        StateHasChanged();
+    }
+
+    private void RemoveNodeInputToMethodInputMap(InputOutputMapViewModel viewModel)
+    {
+        ViewModel.NodeInputToMethodInputMap.Remove(viewModel);
+        StateHasChanged();
     }
 
     public class NodeEditorModalViewModel 
     {
-        public Dictionary<string, string> NodeInputToMethodInputMap { get; set; } = [];
-        public Dictionary<string, string> MethodOutputToNodeOutputMap { get; set; } = [];
+        public List<InputOutputMapViewModel> NodeInputToMethodInputMap { get; set; } = [new()];
+        public List<InputOutputMapViewModel> MethodOutputToNodeOutputMap { get; set; } = [new()];
+    }
+
+    public class InputOutputMapViewModel
+    {
+        public string Input { get; set; } = "";
+        public string Output { get; set; } = "";
     }
 }
