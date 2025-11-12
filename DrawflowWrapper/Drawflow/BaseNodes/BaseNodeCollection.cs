@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using DrawflowWrapper.Drawflow.Attributes;
@@ -81,10 +80,10 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         [DrawflowNodeMethod(Models.NodeType.Function, "Math")]
         public static double MapRange(
             double value,
-            double inMin,
-            double inMax,
-            double outMin,
-            double outMax)
+            [DrawflowInputField] double inMin,
+            [DrawflowInputField] double inMax,
+            [DrawflowInputField] double outMin,
+            [DrawflowInputField] double outMax)
         {
             if (Math.Abs(inMax - inMin) < double.Epsilon)
                 return outMin;
@@ -170,11 +169,11 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         public static bool LessOrEqual(int a, int b) => a <= b;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Comparison")]
-        public static bool EqualD(double a, double b, double tolerance = 0.0)
+        public static bool EqualD(double a, double b, [DrawflowInputField] double tolerance = 0.0)
             => Math.Abs(a - b) <= Math.Max(tolerance, 0.0);
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Comparison")]
-        public static bool StringEquals(string a, string b, bool ignoreCase = false)
+        public static bool StringEquals(string a, string b, [DrawflowInputField] bool ignoreCase = false)
         {
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             return string.Equals(a ?? string.Empty, b ?? string.Empty, comparison);
@@ -195,7 +194,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         public static bool Not(bool value) => !value;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Logic")]
-        public static bool CoalesceBool(bool? value, bool @default = false)
+        public static bool CoalesceBool(bool? value, [DrawflowInputField] bool @default = false)
             => value ?? @default;
 
         // ---------- Strings ----------
@@ -205,11 +204,11 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
             => (input1 ?? "") + (input2 ?? "");
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string JoinWith(string input1, string input2, string separator = "")
+        public static string JoinWith(string input1, string input2, [DrawflowInputField] string separator = "")
             => string.Join(separator ?? string.Empty, input1 ?? string.Empty, input2 ?? string.Empty);
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string JoinArray(string[] items, string separator = ",")
+        public static string JoinArray(string[] items, [DrawflowInputField] string separator = ",")
         {
             items ??= Array.Empty<string>();
             return string.Join(separator ?? string.Empty, items);
@@ -228,7 +227,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         public static int Length(string input) => input?.Length ?? 0;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static bool Contains(string input, string value, bool ignoreCase = false)
+        public static bool Contains(string input, string value, [DrawflowInputField] bool ignoreCase = false)
         {
             if (input == null || value == null) return false;
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -236,7 +235,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static bool StartsWith(string input, string value, bool ignoreCase = false)
+        public static bool StartsWith(string input, string value, [DrawflowInputField] bool ignoreCase = false)
         {
             if (input == null || value == null) return false;
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -244,7 +243,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static bool EndsWith(string input, string value, bool ignoreCase = false)
+        public static bool EndsWith(string input, string value, [DrawflowInputField] bool ignoreCase = false)
         {
             if (input == null || value == null) return false;
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -267,7 +266,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
             => (input ?? string.Empty).Replace(oldValue ?? string.Empty, newValue ?? string.Empty);
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string[] Split(string input, string separator)
+        public static string[] Split(string input, [DrawflowInputField] string separator)
         {
             if (input == null) return Array.Empty<string>();
             separator ??= ",";
@@ -275,11 +274,11 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string CoalesceString(string primary, string fallback = "")
+        public static string CoalesceString(string primary, [DrawflowInputField] string fallback = "")
             => string.IsNullOrEmpty(primary) ? fallback ?? string.Empty : primary;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static int IndexOf(string input, string value, bool ignoreCase = false)
+        public static int IndexOf(string input, string value, [DrawflowInputField] bool ignoreCase = false)
         {
             if (input == null || value == null) return -1;
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -289,10 +288,10 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         // Simple format: replaces {0}, {1}, {2}
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
         public static string Format3(
-            string format,
-            string arg0,
-            string arg1,
-            string arg2)
+            [DrawflowInputField] string format,
+            [DrawflowInputField] string arg0,
+            [DrawflowInputField] string arg1,
+            [DrawflowInputField] string arg2)
         {
             format ??= string.Empty;
             return string.Format(CultureInfo.InvariantCulture, format, arg0, arg1, arg2);
@@ -301,22 +300,22 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         // ---------- Parsing / Conversion ----------
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Parsing")]
-        public static int ParseInt(string text, int @default = 0)
+        public static int ParseInt(string text, [DrawflowInputField] int @default = 0)
             => int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : @default;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Parsing")]
-        public static double ParseDouble(string text, double @default = 0.0)
+        public static double ParseDouble(string text, [DrawflowInputField] double @default = 0.0)
             => double.TryParse(text, NumberStyles.Float | NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var v) ? v : @default;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Parsing")]
-        public static bool ParseBool(string text, bool @default = false)
+        public static bool ParseBool(string text, [DrawflowInputField] bool @default = false)
             => bool.TryParse(text, out var v) ? v : @default;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Parsing")]
         public static DateTime ParseDateTime(
             string text,
-            string format,
-            bool assumeUtc = true)
+            [DrawflowInputField] string format,
+            [DrawflowInputField] bool assumeUtc = true)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return DateTime.MinValue;
@@ -372,7 +371,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Utility")]
-        public static async Task Wait(int timeMs)
+        public static async Task Wait([DrawflowInputField] int timeMs)
             => await Task.Delay(Math.Max(0, timeMs));
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Utility")]
@@ -389,7 +388,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         public static int RandomInteger() => _random.Next();
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Random")]
-        public static int RandomIntegerRange(int min, int max)
+        public static int RandomIntegerRange([DrawflowInputField] int min, [DrawflowInputField] int max)
         {
             if (min == max) return min;
             if (min > max) (min, max) = (max, min);
@@ -434,16 +433,16 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         // ---------- Variables (constants) ----------
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Variables")]
-        public static string StringVariable(string constantString) => constantString;
+        public static string StringVariable([DrawflowInputField] string constantString) => constantString;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Variables")]
-        public static int IntVariable(int constantInt) => constantInt;
+        public static int IntVariable([DrawflowInputField] int constantInt) => constantInt;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Variables")]
-        public static double DoubleVariable(double constantDouble) => constantDouble;
+        public static double DoubleVariable([DrawflowInputField] double constantDouble) => constantDouble;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Variables")]
-        public static bool BoolVariable(bool constantBool) => constantBool;
+        public static bool BoolVariable([DrawflowInputField] bool constantBool) => constantBool;
 
         // ---------- Collections (string arrays) ----------
 
@@ -451,7 +450,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         public static int ArrayLength(string[] items) => items?.Length ?? 0;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static string ArrayElementOrDefault(string[] items, int index, string @default = "")
+        public static string ArrayElementOrDefault(string[] items, int index, [DrawflowInputField] string @default = "")
         {
             if (items == null || items.Length == 0) return @default ?? string.Empty;
             if (index < 0 || index >= items.Length) return @default ?? string.Empty;
@@ -467,7 +466,7 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static bool ArrayContains(string[] items, string value, bool ignoreCase = false)
+        public static bool ArrayContains(string[] items, string value, [DrawflowInputField] bool ignoreCase = false)
         {
             if (items == null) return false;
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
@@ -477,303 +476,45 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         // ---------- JSON helpers (for payload work) ----------
 
         [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonNormalize(string json)
+        public static JsonObject JsonMerge(JsonObject? left, JsonObject? right)
         {
-            var node = ParseLoose(json);
-            return node?.ToJsonString(new JsonSerializerOptions { WriteIndented = false }) ?? "{}";
+            var result = new JsonObject();
+            if (left != null) result.Merge(left);
+            if (right != null) result.Merge(right);
+            return result;
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonPretty(string json)
+        public static JsonNode? JsonGet(JsonObject? obj, [DrawflowInputField] string path)
         {
-            var node = ParseLoose(json);
-            return node?.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) ?? "{}";
-        }
-
-        // Merge objects deeply; arrays concatenate; non-objects fallback to right if not null else left.
-        [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonMergeS(string leftJson, string rightJson)
-        {
-            var left = ParseLoose(leftJson);
-            var right = ParseLoose(rightJson);
-
-            if (left is JsonObject lo && right is JsonObject ro)
-            {
-                var result = new JsonObject();
-                result.Merge(lo);
-                result.Merge(ro);
-                return result.ToJsonString();
-            }
-
-            if (left is JsonArray la && right is JsonArray ra)
-            {
-                var merged = new JsonArray();
-                foreach (var i in la) merged.Add(i?.DeepClone());
-                foreach (var i in ra) merged.Add(i?.DeepClone());
-                return merged.ToJsonString();
-            }
-
-            // Prefer right if provided, else left
-            return (right ?? left ?? new JsonObject()).ToJsonString();
-        }
-
-        // Returns the JSON fragment at path, serialized as JSON string (e.g. "42", "\"text\"", "{\"a\":1}")
-        [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonGetS(string json, string path)
-        {
-            var root = ParseLoose(json);
-            if (root is null) return "null";
-
-            if (string.IsNullOrWhiteSpace(path))
-                return root.ToJsonString();
-
-            if (root is JsonObject obj)
-            {
-                var val = obj.GetByPath(path);
-                return (val ?? JsonValue.Create((string?)null))!.ToJsonString();
-            }
-
-            // If root is array and path is empty, already returned above; otherwise unsupported
-            return "null";
-        }
-
-        // Sets value at path. valueJson is parsed as JSON (use quotes if you want a raw string).
-        // When root is non-object and path is empty, replaces whole root.
-        [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonSetS(string json, string path, string valueJson)
-        {
-            var root = ParseLoose(json) ?? new JsonObject();
-            var valueNode = ParseLoose(valueJson) ?? JsonValue.Create((string?)null);
-
-            // Whole-root replace if no path
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return valueNode!.ToJsonString();
-            }
-
-            if (root is JsonObject obj)
-            {
-                var clone = new JsonObject();
-                clone.Merge(obj);
-                clone.SetByPath(path, valueNode);
-                return clone.ToJsonString();
-            }
-
-            // If root is an array, support empty path only; otherwise, wrap and set "value.<path>"
-            // This keeps behavior predictable without guessing array addressing syntax.
-            var wrapper = new JsonObject { ["value"] = root };
-            wrapper.SetByPath($"value.{path}", valueNode);
-            return wrapper["value"]!.ToJsonString();
-        }
-
-        // Convenience: always force a string at path (quotes handled for you)
-        [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonSetStringS(string json, string path, string value)
-        {
-            var root = ParseLoose(json) ?? new JsonObject();
-            var val = JsonValue.Create(value ?? string.Empty);
-
-            if (string.IsNullOrWhiteSpace(path))
-                return val!.ToJsonString();
-
-            if (root is JsonObject obj)
-            {
-                var clone = new JsonObject();
-                clone.Merge(obj);
-                clone.SetByPath(path, val);
-                return clone.ToJsonString();
-            }
-
-            var wrapper = new JsonObject { ["value"] = root };
-            wrapper.SetByPath($"value.{path}", val);
-            return wrapper["value"]!.ToJsonString();
-        }
-
-        // Remove a property/index at path. Empty path -> return {} or [] depending on original type.
-        [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonRemoveS(string json, string path)
-        {
-            var root = ParseLoose(json);
-            if (root is null) return "{}";
-
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                // Clear to same kind
-                return (root is JsonArray) ? "[]" : "{}";
-            }
-
-            if (root is JsonObject obj)
-            {
-                var clone = new JsonObject();
-                clone.Merge(obj);
-                RemoveByPath(clone, path);
-                return clone.ToJsonString();
-            }
-
-            // For array roots, only empty path supported above
-            return root.ToJsonString();
-        }
-
-        // Append an item (itemJson) to an array at path. If path empty and root is array, append to root.
-        [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonArrayPushS(string json, string path, string itemJson)
-        {
-            var root = ParseLoose(json) ?? new JsonArray();
-            var item = ParseLoose(itemJson);
-
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                if (root is not JsonArray ra) ra = new JsonArray(root);
-                ra.Add(item);
-                return ra.ToJsonString();
-            }
-
-            if (root is JsonObject obj)
-            {
-                var clone = new JsonObject();
-                clone.Merge(obj);
-
-                var target = clone.GetByPath(path);
-                if (target is not JsonArray arr)
-                {
-                    arr = new JsonArray();
-                    clone.SetByPath(path, arr);
-                }
-
-                arr.Add(item);
-                return clone.ToJsonString();
-            }
-
-            // For array roots with non-empty path, wrap to address path under "value"
-            var wrapper = new JsonObject { ["value"] = root };
-            var target2 = wrapper.GetByPath($"value.{path}");
-            if (target2 is not JsonArray arr2)
-            {
-                arr2 = new JsonArray();
-                wrapper.SetByPath($"value.{path}", arr2);
-            }
-            arr2.Add(item);
-            return wrapper["value"]!.ToJsonString();
+            if (obj == null || string.IsNullOrWhiteSpace(path)) return null;
+            return obj.GetByPath(path);
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonArrayElementS(string json, string path, int index)
+        public static JsonObject JsonSet(JsonObject? obj, [DrawflowInputField] string path, JsonNode? value)
         {
-            var root = ParseLoose(json);
-            if (root is null) return "null";
-
-            JsonNode? target = null;
-
-            if (string.IsNullOrWhiteSpace(path))
+            obj ??= new JsonObject();
+            var clone = new JsonObject();
+            clone.Merge(obj);
+            if (!string.IsNullOrWhiteSpace(path))
             {
-                target = root;
+                clone.SetByPath(path, value);
             }
-            else if (root is JsonObject obj)
-            {
-                target = obj.GetByPath(path);
-            }
-            else
-            {
-                var wrapper = new JsonObject { ["value"] = root };
-                target = wrapper.GetByPath($"value.{path}");
-            }
-
-            if (target is JsonArray arr && index >= 0 && index < arr.Count)
-                return (arr[index] ?? JsonValue.Create((string?)null))!.ToJsonString();
-
-            return "null";
+            return clone;
         }
 
-        // Check if a token exists at path (root array supports empty path only).
         [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static bool JsonPathExistsS(string json, string path)
+        public static JsonObject JsonSetString(JsonObject? obj, [DrawflowInputField] string path, [DrawflowInputField] string value)
         {
-            var root = ParseLoose(json);
-            if (root is null) return false;
-
-            if (string.IsNullOrWhiteSpace(path))
-                return true;
-
-            if (root is JsonObject obj)
-                return obj.GetByPath(path) != null;
-
-            var wrapper = new JsonObject { ["value"] = root };
-            return wrapper.GetByPath($"value.{path}") != null;
-        }
-
-        // Type of node at path: "object", "array", "string", "number", "bool", "null", "missing"
-        [DrawflowNodeMethod(Models.NodeType.Function, "JSON")]
-        public static string JsonTypeOfS(string json, string path)
-        {
-            var root = ParseLoose(json);
-            if (root is null) return "missing";
-
-            JsonNode? target = null;
-
-            if (string.IsNullOrWhiteSpace(path))
-                target = root;
-            else if (root is JsonObject obj)
-                target = obj.GetByPath(path);
-            else
+            obj ??= new JsonObject();
+            var clone = new JsonObject();
+            clone.Merge(obj);
+            if (!string.IsNullOrWhiteSpace(path))
             {
-                var wrapper = new JsonObject { ["value"] = root };
-                target = wrapper.GetByPath($"value.{path}");
+                clone.SetByPath(path, value);
             }
-
-            return target switch
-            {
-                null => "missing",
-                JsonObject => "object",
-                JsonArray => "array",
-                JsonValue v when v.TryGetValue(out string? _) => "string",
-                JsonValue v when v.TryGetValue(out double _) => "number",
-                JsonValue v when v.TryGetValue(out bool _) => "bool",
-                JsonValue => "unknown",
-                _ => "unknown"
-            };
-        }
-
-        // ---------- helpers ----------
-
-        private static JsonNode? ParseLoose(string json)
-        {
-            if (string.IsNullOrWhiteSpace(json))
-                return null;
-
-            try { return JsonNode.Parse(json); }
-            catch
-            {
-                // If it's not valid JSON, treat it as a JSON string literal
-                return JsonValue.Create(json);
-            }
-        }
-
-        // Minimal remove-by-path using your existing helpers for object roots.
-        private static void RemoveByPath(JsonObject obj, string path)
-        {
-            if (string.IsNullOrWhiteSpace(path)) return;
-
-            // Split last segment to remove property on its parent
-            var lastDot = path.LastIndexOf('.');
-            if (lastDot < 0)
-            {
-                obj.Remove(path);
-                return;
-            }
-
-            var parentPath = path[..lastDot];
-            var leaf = path[(lastDot + 1)..];
-
-            var parentNode = obj.GetByPath(parentPath);
-            if (parentNode is JsonObject parentObj)
-            {
-                parentObj.Remove(leaf);
-            }
-            else if (parentNode is JsonArray parentArr && int.TryParse(leaf, out var idx))
-            {
-                if (idx >= 0 && idx < parentArr.Count)
-                    parentArr.RemoveAt(idx);
-            }
+            return clone;
         }
 
         // ---------- Control Flow with ports ----------
@@ -823,9 +564,9 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         public static async Task SwitchInt(
             NodeContext ctx,
             int value,
-            int case1,
-            int case2,
-            int case3)
+            [DrawflowInputField] int case1,
+            [DrawflowInputField] int case2,
+            [DrawflowInputField] int case3)
         {
             if (value == case1)
             {
@@ -851,10 +592,10 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         public static async Task SwitchString(
             NodeContext ctx,
             string value,
-            string case1,
-            string case2,
-            string case3,
-            bool ignoreCase = false)
+            [DrawflowInputField] string case1,
+            [DrawflowInputField] string case2,
+            [DrawflowInputField] string case3,
+            [DrawflowInputField] bool ignoreCase = false)
         {
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             value ??= string.Empty;
@@ -939,8 +680,8 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Templates")]
         public static string InterpolateString(
-            string template,
-            string value)
+            [DrawflowInputField] string template,
+            [DrawflowInputField] string value)
         {
             template ??= string.Empty;
             value ??= string.Empty;
@@ -952,8 +693,8 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
 
         [DrawflowNodeMethod(Models.NodeType.Function, "HTTP")]
         public static async Task<string> HttpGetString(
-            string url,
-            int timeoutMs = 10000)
+            [DrawflowInputField] string url,
+            [DrawflowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return string.Empty;
@@ -976,8 +717,8 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
 
         [DrawflowNodeMethod(Models.NodeType.Function, "HTTP")]
         public static async Task<int> HttpGetStatusCode(
-            string url,
-            int timeoutMs = 10000)
+            [DrawflowInputField] string url,
+            [DrawflowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return 0;
@@ -1000,10 +741,10 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
 
         [DrawflowNodeMethod(Models.NodeType.Function, "HTTP")]
         public static async Task<string> HttpPostString(
-            string url,
+            [DrawflowInputField] string url,
             string body,
-            string contentType = "application/json",
-            int timeoutMs = 10000)
+            [DrawflowInputField] string contentType = "application/json",
+            [DrawflowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return string.Empty;
@@ -1030,10 +771,10 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
 
         [DrawflowNodeMethod(Models.NodeType.Function, "HTTP")]
         public static async Task<int> HttpPostStatusCode(
-            string url,
+            [DrawflowInputField] string url,
             string body,
-            string contentType = "application/json",
-            int timeoutMs = 10000)
+            [DrawflowInputField] string contentType = "application/json",
+            [DrawflowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
                 return 0;
@@ -1063,8 +804,8 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         [NodeFlowPorts("success", "error")]
         public static async Task<string> HttpGetFlow(
             NodeContext ctx,
-            string url,
-            int timeoutMs = 10000)
+            [DrawflowInputField] string url,
+            [DrawflowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
             {
@@ -1107,10 +848,10 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         [NodeFlowPorts("success", "error")]
         public static async Task<string> HttpPostFlow(
             NodeContext ctx,
-            string url,
+            [DrawflowInputField] string url,
             string body,
-            string contentType = "application/json",
-            int timeoutMs = 10000)
+            [DrawflowInputField] string contentType = "application/json",
+            [DrawflowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
             {
