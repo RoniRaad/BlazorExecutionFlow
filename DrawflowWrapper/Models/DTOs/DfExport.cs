@@ -34,8 +34,8 @@ public sealed record DfExport
         [JsonPropertyName("inputs")] public Dictionary<string, Port> Inputs { get; init; } = new();
         [JsonPropertyName("outputs")] public Dictionary<string, Port> Outputs { get; init; } = new();
 
-        [JsonPropertyName("pos_x")] public int PosX { get; init; }
-        [JsonPropertyName("pos_y")] public int PosY { get; init; }
+        [JsonPropertyName("pos_x")] public double PosX { get; init; }
+        [JsonPropertyName("pos_y")] public double PosY { get; init; }
     }
 
     public sealed class Port

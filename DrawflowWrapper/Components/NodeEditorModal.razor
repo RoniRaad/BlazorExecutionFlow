@@ -1,6 +1,15 @@
 ﻿@using System.Reflection
+@using DrawflowWrapper.Helpers
 @using DrawflowWrapper.Models.NodeV2
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using System.Net.Http
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.Web
+@using static Microsoft.AspNetCore.Components.Web.RenderMode
+@using Microsoft.AspNetCore.Components.Web.Virtualization
 
 <!-- Node editor modal -->
 <div style="display:block;" class="modal fade show node-editor-modal"
@@ -30,7 +39,7 @@
                         </header>
                         <div class="panel-body">
                             <div class="payload-preview" data-role="payload-preview">
-                                @IncomingPayloadJson
+                                @(JsonSerializer.Serialize(IncomingPayloadJson, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true }))
                             </div>
 
                             <div class="panel-section">
@@ -44,12 +53,16 @@
                                 </div>
                                 <div class="payload-field-list" data-role="payload-field-list">
                                     <!-- Example chip, clone these in JS -->
-                                    <button type="button"
-                                            class="payload-field-chip"
-                                            data-role="payload-field"
-                                            data-path="user.name">
-                                        user.name
-                                    </button>
+                                    @foreach (var fieldKvp in IncomingPayloadJson?.AsObject()?["input"]?.AsObject() ?? [])
+                                    {
+                                        <button type="button"
+                                                class="payload-field-chip"
+                                                data-role="payload-field"
+                                                data-path="@fieldKvp.Key">
+                                            @($"input.{fieldKvp.Key}")
+                                        </button>
+                                    }
+
                                 </div>
                             </div>
                         </div>
@@ -68,7 +81,13 @@
                             <div class="panel-section" data-role="function-input-map">
                                 <div class="panel-section-header">
                                     <span>Function input map</span>
-                                    <button onclick="@(() => ViewModel.NodeInputToMethodInputMap.Add(new()))" type="button"
+                                    <button onclick="@(() => { 
+                                                if (ViewModel.NodeInputToMethodInputMap.Count != BackingNode?.BackingMethod?.GetParameters()?.Count())
+                                                {
+                                                    ViewModel.NodeInputToMethodInputMap.Add(new()); 
+                                                    InvokeAsync(StateHasChanged); 
+                                                }
+                                            })" type="button"
                                             class="btn btn-xs btn-outline-secondary"
                                             data-role="add-input-mapping">
                                         Add mapping
@@ -82,19 +101,24 @@
                                         <div class="mapping-row" data-role="input-mapping-row">
                                             <div class="mapping-col">
                                                 <label>Payload path</label>
-                                                <InputText @bind-Value="inputMapping.Input" type="text"
+                                                <InputText @bind-Value="inputMapping.From" type="text"
                                                        class="form-control form-control-sm"
-                                                       placeholder="e.g. user.name"
+                                                       placeholder="e.g. input.name"
                                                        data-role="payload-path" />
                                             </div>
                                             <div class="mapping-arrow">→</div>
                                             <div class="mapping-col">
                                                 <label>Parameter</label>
-                                                <InputSelect @bind-Value="inputMapping.Output" class="form-select form-select-sm" data-role="parameter-name">
+                                                <InputSelect @bind-Value="inputMapping.To" class="form-select form-select-sm" data-role="parameter-name">
                                                     <option value="">Select parameter…</option>
-                                                    @foreach (var param in BackingNode?.BackingMethod?.GetParameters() ?? [])
+                                                    @if (BackingNode?.BackingMethod?.GetParameters().Count() == 1)
                                                     {
-                                                        <option value="@param.Name">(@param.ParameterType.Name) @param.Name</option>
+                                                        var parameter = BackingNode?.BackingMethod?.GetParameters();
+                                                        <option @key="@parameter[0].Name" value="@parameter[0].Name">(@parameter[0].ParameterType.Name) @parameter[0].Name</option>
+                                                    }
+                                                    @foreach (var param in BackingNode?.BackingMethod?.GetParameters().Where(x => ViewModel.NodeInputToMethodInputMap.Any(y => inputMapping != y && y.To != x.Name)) ?? [])
+                                                    {
+                                                        <option @key="@param.Name" value="@param.Name">(@param.ParameterType.Name) @param.Name</option>
                                                     }
                                                 </InputSelect>
                                             </div>
@@ -115,7 +139,13 @@
                             <div class="panel-section" data-role="function-output-map">
                                 <div class="panel-section-header">
                                     <span>Function output map</span>
-                                    <button onclick="@(() => ViewModel.MethodOutputToNodeOutputMap.Add(new()))" type="button"
+                                    <button onclick="@(() => { 
+                                                if (ViewModel.MethodOutputToNodeOutputMap.Count != GetReturnProperties()?.Count())
+                                                {
+                                                    ViewModel.MethodOutputToNodeOutputMap.Add(new()); 
+                                                    InvokeAsync(StateHasChanged); 
+                                                }
+                                            })" type="button"
                                             class="btn btn-xs btn-outline-secondary"
                                             data-role="add-output-mapping">
                                         Add mapping
@@ -123,7 +153,7 @@
                                 </div>
 
                                 <div class="mapping-list" data-role="output-mapping-list">
-                                    @{ var propInfos = GetReturnProperties(); };
+                                    @{ var propInfos = GetReturnProperties(); }
                                     @if (propInfos is not null)
                                     {
                                         @foreach (var outputMapping in ViewModel.MethodOutputToNodeOutputMap)
@@ -131,14 +161,14 @@
                                             <div class="mapping-row" data-role="output-mapping-row">
                                                 <div class="mapping-col">
                                                     <label>Function output</label>
-                                                    <InputSelect @bind-Value="outputMapping.Input" class="form-select form-select-sm" data-role="function-output">
+                                                    <InputSelect @bind-Value="outputMapping.From" class="form-select form-select-sm" data-role="function-output">
                                                         <option value="">Select output…</option>
 
                                                         @if (propInfos.Count() > 0)
                                                         {
                                                             @foreach (var property in propInfos)
                                                             {
-                                                                <option value="@property.Name">(@property.PropertyType.Name) @property.Name</option>
+                                                                <option value="@property.Name">(@property.Type) @property.Name</option>
                                                             }
                                                         }
                                                         else
@@ -151,9 +181,9 @@
                                                 <div class="mapping-arrow">→</div>
                                                 <div class="mapping-col">
                                                     <label>Payload path</label>
-                                                    <InputText @bind-Value="outputMapping.Output" type="text"
+                                                    <InputText @bind-Value="outputMapping.To" type="text"
                                                                class="form-control form-control-sm"
-                                                               placeholder="e.g. result.value"
+                                                               placeholder="e.g. name"
                                                                data-role="target-payload-path" />
                                                 </div>
                                                 <button onclick="@(() => RemoveMethodOutputToNodeOutputMap(outputMapping))" type="button"
@@ -180,7 +210,7 @@
                         <div class="panel-body">
                             <div class="payload-preview payload-preview--output"
                                  data-role="output-preview">
-                                @OutputPayloadJson
+                                @(JsonSerializer.Serialize(OutputPayloadJson, new JsonSerializerOptions() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = true }))
                             </div>
 
                             <div class="panel-section">
@@ -189,7 +219,7 @@
                                 </div>
 
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input"
+                                    <input @bind="BackingNode.MergeOutputWithInput" class="form-check-input"
                                            type="checkbox"
                                            id="replacePayload"
                                            data-role="replace-payload" />
@@ -234,41 +264,47 @@
     public EventCallback CloseRequested { get; set; }
 
     [Parameter]
-    public required Node? BackingNode { get; set; }
+    public EventCallback SaveRequested { get; set; }
 
     [Parameter]
-    public string? IncomingPayloadJson { get; set; }
+    public required Node BackingNode { get; set; } = new() { BackingMethod = null };
 
     [Parameter]
-    public string? OutputPayloadJson { get; set; }
+    public JsonNode? IncomingPayloadJson { get; set; }
+
+    [Parameter]
+    public JsonNode? OutputPayloadJson { get; set; }
 
     public NodeEditorModalViewModel ViewModel { get; set; } = new();
 
-    public PropertyInfo[]? GetReturnProperties()
+    protected override void OnParametersSet()
     {
-        var methodReturnType = BackingNode?.BackingMethod?.ReturnType;
-        if (methodReturnType == typeof(void) || methodReturnType == typeof(Task))
-        {
-            return null;
-        }
+        base.OnParametersSet();
+        ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
+        ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
+        OutputPayloadJson = BackingNode?.Result;
+        IncomingPayloadJson =BackingNode?.Input;
+    }
 
-        var returnProperties = methodReturnType?.GetProperties(BindingFlags.Instance | BindingFlags.Public) ?? [];
-        return returnProperties;
+    public List<(string? Type, string? Name)>? GetReturnProperties()
+    {
+        return TypeHelpers.GetReturnProperties(BackingNode.BackingMethod);
     }
 
     private void SaveMappings()
     {
-        BackingNode.MethodOutputToNodeOutputMap = ViewModel.MethodOutputToNodeOutputMap.ToDictionary(x => x.Input, x => x.Output);
-        BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap.ToDictionary(x => x.Input, x => x.Output);
+        BackingNode.MethodOutputToNodeOutputMap = ViewModel.MethodOutputToNodeOutputMap;
+        BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap;
+        SaveRequested.InvokeAsync();
     }
 
-    private void RemoveMethodOutputToNodeOutputMap(InputOutputMapViewModel viewModel)
+    private void RemoveMethodOutputToNodeOutputMap(PathMapEntry viewModel)
     {
         ViewModel.MethodOutputToNodeOutputMap.Remove(viewModel);
         StateHasChanged();
     }
 
-    private void RemoveNodeInputToMethodInputMap(InputOutputMapViewModel viewModel)
+    private void RemoveNodeInputToMethodInputMap(PathMapEntry viewModel)
     {
         ViewModel.NodeInputToMethodInputMap.Remove(viewModel);
         StateHasChanged();
@@ -276,13 +312,7 @@
 
     public class NodeEditorModalViewModel 
     {
-        public List<InputOutputMapViewModel> NodeInputToMethodInputMap { get; set; } = [new()];
-        public List<InputOutputMapViewModel> MethodOutputToNodeOutputMap { get; set; } = [new()];
-    }
-
-    public class InputOutputMapViewModel
-    {
-        public string Input { get; set; } = "";
-        public string Output { get; set; } = "";
+        public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [new()];
+        public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [new()];
     }
 }

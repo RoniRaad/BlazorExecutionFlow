@@ -30,9 +30,8 @@
     color: var(--df-text);
 }
 
-/* WIDTH + LAYOUT: keep EXACTLY as before */
 .drawflow .drawflow-node {
-    width: calc(var(--df-left-label-width) + var(--df-right-label-width) + var(--df-body-width) + 54px);
+    width: 150px;
     background-color: var(--df-node);
     border-radius: var(--df-radius);
     border: 1px solid var(--df-border);
@@ -40,11 +39,10 @@
     color: var(--df-text);
 }
 
-    /* keep your spacing */
-    .drawflow .drawflow-node .drawflow_content_node {
-        display: block;
-        margin-top: 15px;
-    }
+.drawflow .drawflow-node .drawflow_content_node {
+    display: block;
+    margin-top: 15px;
+}
 
 .drawflow-node .inputs {
     padding-top: 13px;

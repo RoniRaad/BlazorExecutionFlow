@@ -44,11 +44,10 @@ namespace DrawflowWrapper.Helpers
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("Path must not be empty.", nameof(path));
 
-            // Convert value -> JsonNode
             JsonNode? valueNode = value switch
             {
                 null => null,
-                JsonNode n => n,
+                JsonNode n => n.DeepClone(),              // 👈 important change
                 JsonElement e => JsonNode.Parse(e.GetRawText()),
                 _ => JsonSerializer.SerializeToNode(value)
             };
@@ -59,24 +58,20 @@ namespace DrawflowWrapper.Helpers
 
             JsonNode current = root;
 
-            // Walk all but last segment
             for (int i = 0; i < segments.Length - 1; i++)
             {
                 string segment = segments[i];
 
-                // Array index
                 if (int.TryParse(segment, out int index))
                 {
                     if (current is not JsonArray arr)
-                        return false; // or throw, depending on how strict you want
+                        return false;
 
-                    // Grow array if needed
                     while (arr.Count <= index)
                         arr.Add(null);
 
                     if (arr[index] is null)
                     {
-                        // Default to JsonObject for nested container
                         var newObj = new JsonObject();
                         arr[index] = newObj;
                         current = newObj;
@@ -88,13 +83,11 @@ namespace DrawflowWrapper.Helpers
                 }
                 else
                 {
-                    // Object property
                     if (current is not JsonObject obj)
                         return false;
 
                     if (!obj.TryGetPropertyValue(segment, out JsonNode? child) || child is null)
                     {
-                        // Default to JsonObject for nested container
                         var newObj = new JsonObject();
                         obj[segment] = newObj;
                         current = newObj;
@@ -106,7 +99,6 @@ namespace DrawflowWrapper.Helpers
                 }
             }
 
-            // Final segment: actually set the value
             string last = segments[^1];
 
             if (int.TryParse(last, out int lastIndex))
@@ -128,6 +120,43 @@ namespace DrawflowWrapper.Helpers
                 obj[last] = valueNode;
                 return true;
             }
+        }
+
+        public static object? CoerceToType(this JsonNode? node, Type targetType, JsonSerializerOptions? options = null)
+        {
+            if (node is null)
+            {
+                // null -> default(T)
+                return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
+            }
+
+            try
+            {
+                // Uses System.Text.Json to deserialize node into the given Type
+                return JsonSerializer.Deserialize(node, targetType, options);
+            }
+            catch
+            {
+                throw new InvalidCastException($"Unable to cast {node.GetValueKind()} to {targetType}"); 
+            }
+        }
+
+        public static object? ToPlainObject(this JsonNode? node)
+        {
+            return node switch
+            {
+                null => null,
+                JsonValue value => value.GetValue<object?>(),
+
+                JsonObject obj => obj.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => ToPlainObject(kvp.Value)
+                ),
+
+                JsonArray arr => arr.Select(ToPlainObject).ToList(),
+
+                _ => null
+            };
         }
     }
 }

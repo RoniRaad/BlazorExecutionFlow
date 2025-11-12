@@ -214,6 +214,10 @@ window.DrawflowBlazor = (function () {
         const outputs = nodeEl.querySelectorAll(".outputs .output");
 
         for (let i = 0; i < inputs.length; i++) {
+            if (inLabels.length <= i)
+            {
+                continue;
+            }
             const text = inLabels[i] ?? `In ${i + 1}`;
             const typeText = inLabels[i][0];
             const valueText = inLabels[i][1];
@@ -243,6 +247,9 @@ window.DrawflowBlazor = (function () {
             inputs[i].appendChild(newDiv);
         }
         for (let i = 0; i < outputs.length; i++) {
+            if (outLabels.length <= i) {
+                continue;
+            }
             const text = outLabels[i] ?? `Out ${i + 1}`;
             const typeText = outLabels[i][0];
             const valueText = outLabels[i][1];
@@ -311,7 +318,30 @@ window.DrawflowBlazor = (function () {
 
     }
 
-    return { create, destroy, on, off, call, get, set, labelPorts, setNodeStatus };
+    function setNodeDoubleClickCallback(elementId, callbackReference) {
+        const host = document.getElementById(elementId);
+        if (!host) return;
+
+        host.addEventListener('dblclick', function (e) {
+            const nodeEl = e.target.closest('.drawflow-node');
+            if (!nodeEl) return;
+
+            const idAttr = nodeEl.dataset.id || nodeEl.getAttribute('data-id')
+                || (nodeEl.id && nodeEl.id.startsWith('node-')
+                    ? nodeEl.id.substring('node-'.length)
+                    : nodeEl.id);
+
+            if (!idAttr) return;
+
+            // Call into Blazor
+            callbackReference.invokeMethodAsync(
+                'OnNodeDoubleClickFromJs',
+                idAttr
+            );
+        });
+    }
+
+    return { create, destroy, on, off, call, get, set, labelPorts, setNodeStatus, setNodeDoubleClickCallback };
 })();
 
 window.nextFrame = () => {

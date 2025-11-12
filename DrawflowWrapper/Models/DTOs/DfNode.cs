@@ -12,6 +12,6 @@ public class DfNode
     [JsonPropertyName("typenode")] public bool? TypeNode { get; init; }
     [JsonPropertyName("inputs")] public Dictionary<string, DfPort>? Inputs { get; init; }
     [JsonPropertyName("outputs")] public Dictionary<string, DfPort>? Outputs { get; init; }
-    [JsonPropertyName("pos_x")] public int PosX { get; init; }
-    [JsonPropertyName("pos_y")] public int PosY { get; init; }
+    [JsonPropertyName("pos_x")] public double PosX { get; init; }
+    [JsonPropertyName("pos_y")] public double PosY { get; init; }
 }
