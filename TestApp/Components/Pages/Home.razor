@@ -150,7 +150,7 @@
 
     private async Task SaveChanges()
     {
-        var graph = await _base.CreateInternalV2Graph().ConfigureAwait(false);
+        var graph = await _base.CreateInternalV2Graph();
         var currentUiNode = graph.Nodes.First(x => x.Key == editNode.DrawflowNodeId);
         editNode.PosX = currentUiNode.Value.PosX;
         editNode.PosY = currentUiNode.Value.PosY;
@@ -162,7 +162,7 @@
 
         foreach (var node in graph.Nodes)
         {
-            if (node.Value.OutputPorts.Count > 1)
+            if (node.Value.DeclaredOutputPorts.Count > 0)
             {
                 await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.Value.DrawflowNodeId, new List<List<string>>(), node.Value.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
             }
@@ -176,12 +176,12 @@
         {
             status.OutputPortResults[outputPos.Value] = value!;
         }
-        await _base.SetNodeStatus(nodeId, status).ConfigureAwait(false);
+        await _base.SetNodeStatus(nodeId, status);
     }
 
     private async Task Run()
     {
-        var graph = await _base.CreateInternalV2Graph().ConfigureAwait(false);
+        var graph = await _base.CreateInternalV2Graph();
         foreach (var node in graph.Nodes)
         {
             node.Value.Result = null;
@@ -196,21 +196,23 @@
             tasks.Add(startNode.Value.ExecuteNode());
         }
 
-        _ = Task.WhenAll(tasks).ContinueWith(async x =>
+        await Task.WhenAll(tasks);
+
+        // Re-import the graph with execution results
+        var json = DrawflowExporter.ExportToDrawflowJson(graph.Nodes.Select(x => x.Value));
+        await _base.CallAsync("import", json);
+        await _base.JS.InvokeVoidAsync("nextFrame");
+
+        // Re-apply port labels for nodes with multiple outputs
+        foreach (var node in graph.Nodes)
         {
-            var json = DrawflowExporter.ExportToDrawflowJson(graph.Nodes.Select(x => x.Value));
-            await _base.CallAsync("import", json);
-            await _base.JS.InvokeVoidAsync("nextFrame");
-
-            foreach (var node in graph.Nodes)
+            if (node.Value.DeclaredOutputPorts.Count > 0)
             {
-                if (node.Value.OutputPorts.Count > 1)
-                {
-                    await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.Value.DrawflowNodeId, new List<List<string>>(), node.Value.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
-                }
+                await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.Value.DrawflowNodeId, new List<List<string>>(), node.Value.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
             }
-        });
+        }
 
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task CreateNode(Node node)
