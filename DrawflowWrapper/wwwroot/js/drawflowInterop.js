@@ -109,6 +109,34 @@ window.DrawflowBlazor = (function () {
             return a;
         });
         const result = fn.apply(target, resolvedArgs);
+
+        // Special handling for export to avoid serialization issues
+        if (methodName === "export" && result && typeof result === "object") {
+            try {
+                // Use a custom replacer to handle circular references and non-serializable objects
+                const seen = new WeakSet();
+                const jsonString = JSON.stringify(result, (_key, value) => {
+                    // Skip certain problematic types
+                    if (typeof value === 'function') return undefined;
+                    if (value instanceof HTMLElement) return undefined;
+
+                    // Handle circular references
+                    if (typeof value === 'object' && value !== null) {
+                        if (seen.has(value)) {
+                            return undefined; // Skip circular reference
+                        }
+                        seen.add(value);
+                    }
+
+                    return value;
+                });
+                return jsonString;
+            } catch (e) {
+                console.error("Failed to stringify export result", e);
+                throw new Error("Export serialization failed: " + e.message);
+            }
+        }
+
         if (result && typeof result.then === "function") {
             return await result;
         }

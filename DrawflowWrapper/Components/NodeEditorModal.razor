@@ -93,14 +93,9 @@
                             <div class="panel-section" data-role="function-input-map">
                                 <div class="panel-section-header">
                                     <span>Function input map</span>
-                                    <button onclick="@(() => { 
-                                                if (ViewModel.NodeInputToMethodInputMap.Count != BackingNode?.BackingMethod?.GetParameters()?.Count())
-                                                {
-                                                    ViewModel.NodeInputToMethodInputMap.Add(new()); 
-                                                    InvokeAsync(StateHasChanged); 
-                                                }
-                                            })" type="button"
+                                    <button onclick="@AddInputMapping" type="button"
                                             class="btn btn-xs btn-outline-secondary"
+                                            disabled="@(!CanAddInputMapping())"
                                             data-role="add-input-mapping">
                                         Add mapping
                                     </button>
@@ -128,12 +123,7 @@
                                                              aria-label="Target parameter for input mapping"
                                                              data-role="parameter-name">
                                                     <option value="">Select parameter…</option>
-                                                    @if (BackingNode?.BackingMethod?.GetParameters().Count() == 1)
-                                                    {
-                                                        var parameter = BackingNode?.BackingMethod?.GetParameters();
-                                                        <option @key="@parameter[0].Name" value="@parameter[0].Name">(@parameter[0].ParameterType.Name) @parameter[0].Name</option>
-                                                    }
-                                                    @foreach (var param in BackingNode?.BackingMethod?.GetParameters().Where(x => ViewModel.NodeInputToMethodInputMap.Any(y => inputMapping != y && y.To != x.Name)) ?? [])
+                                                    @foreach (var param in GetAvailableInputParameters(inputMapping))
                                                     {
                                                         <option @key="@param.Name" value="@param.Name">(@param.ParameterType.Name) @param.Name</option>
                                                     }
@@ -158,14 +148,9 @@
                             <div class="panel-section" data-role="function-output-map">
                                 <div class="panel-section-header">
                                     <span>Function output map</span>
-                                    <button onclick="@(() => { 
-                                                if (ViewModel.MethodOutputToNodeOutputMap.Count != GetReturnProperties()?.Count())
-                                                {
-                                                    ViewModel.MethodOutputToNodeOutputMap.Add(new()); 
-                                                    InvokeAsync(StateHasChanged); 
-                                                }
-                                            })" type="button"
+                                    <button onclick="@AddOutputMapping" type="button"
                                             class="btn btn-xs btn-outline-secondary"
+                                            disabled="@(!CanAddOutputMapping())"
                                             data-role="add-output-mapping">
                                         Add mapping
                                     </button>
@@ -188,14 +173,17 @@
 
                                                         @if (propInfos.Count() > 0)
                                                         {
-                                                            @foreach (var property in propInfos)
+                                                            @foreach (var property in GetAvailableOutputProperties(outputMapping, propInfos))
                                                             {
                                                                 <option value="@property.Name">(@property.Type) @property.Name</option>
                                                             }
                                                         }
                                                         else
                                                         {
-                                                            <option value="result">(@BackingNode.BackingMethod.ReturnType.Name) result</option>
+                                                            @if (IsOutputValueAvailable(outputMapping, "result"))
+                                                            {
+                                                                <option value="result">(@BackingNode.BackingMethod.ReturnType.Name) result</option>
+                                                            }
                                                         }
 
                                                     </InputSelect>
@@ -318,10 +306,122 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
-        ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
+
+        // Create a fresh ViewModel each time to avoid stale data
+        ViewModel = new NodeEditorModalViewModel();
+
+        // Initialize with existing mappings or populate with smart defaults
+        if (BackingNode.NodeInputToMethodInputMap.Count == 0)
+        {
+            // Auto-populate input mappings with sensible defaults
+            var defaultMappings = GenerateDefaultInputMappings();
+            ViewModel.NodeInputToMethodInputMap = defaultMappings.Count > 0 ? defaultMappings : new List<PathMapEntry>();
+        }
+        else
+        {
+            // Filter out any blank/invalid entries when loading existing mappings
+            // Keep entries only if BOTH From and To have values
+            var validMappings = BackingNode.NodeInputToMethodInputMap
+                .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
+                .ToList();
+            ViewModel.NodeInputToMethodInputMap = validMappings.Count > 0 ? validMappings : GenerateDefaultInputMappings();
+        }
+
+        if (BackingNode.MethodOutputToNodeOutputMap.Count == 0)
+        {
+            // Auto-populate output mappings with property names or "result"
+            var defaultMappings = GenerateDefaultOutputMappings();
+            ViewModel.MethodOutputToNodeOutputMap = defaultMappings.Count > 0 ? defaultMappings : new List<PathMapEntry>();
+        }
+        else
+        {
+            // Filter out any blank/invalid entries when loading existing mappings
+            // Keep entries only if BOTH From and To have values
+            var validMappings = BackingNode.MethodOutputToNodeOutputMap
+                .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
+                .ToList();
+            ViewModel.MethodOutputToNodeOutputMap = validMappings.Count > 0 ? validMappings : GenerateDefaultOutputMappings();
+        }
+
         OutputPayloadJson = BackingNode?.Result;
         IncomingPayloadJson = BackingNode?.Input;
+    }
+
+    private List<PathMapEntry> GenerateDefaultInputMappings()
+    {
+        var mappings = new List<PathMapEntry>();
+        var parameters = BackingNode.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
+
+        foreach (var param in parameters)
+        {
+            // Skip NodeContext parameters as they're handled automatically
+            if (param.ParameterType == typeof(NodeContext))
+                continue;
+
+            // Check if parameter has DrawflowInputField attribute (means it should be a literal)
+            var hasInputFieldAttr = param.GetCustomAttribute<DrawflowWrapper.Drawflow.Attributes.DrawflowInputFieldAttribute>() != null;
+
+            string defaultValue;
+            if (hasInputFieldAttr)
+            {
+                // For input fields, provide a placeholder literal value
+                defaultValue = GeneratePlaceholderLiteral(param.ParameterType, param.Name);
+            }
+            else
+            {
+                // For regular parameters, suggest mapping from input payload using template syntax
+                defaultValue = $"{{{{input.{param.Name}}}}}";
+            }
+
+            mappings.Add(new PathMapEntry
+            {
+                From = defaultValue,
+                To = param.Name ?? string.Empty
+            });
+        }
+
+        return mappings;
+    }
+
+    private List<PathMapEntry> GenerateDefaultOutputMappings()
+    {
+        var mappings = new List<PathMapEntry>();
+        var returnProps = GetReturnProperties();
+
+        if (returnProps != null)
+        {
+            foreach (var prop in returnProps)
+            {
+                if (prop.Name != null)
+                {
+                    mappings.Add(new PathMapEntry
+                    {
+                        From = prop.Name,
+                        To = prop.Name  // Map to same name by default
+                    });
+                }
+            }
+        }
+
+        return mappings;
+    }
+
+    private string GeneratePlaceholderLiteral(Type paramType, string? paramName)
+    {
+        // Generate helpful placeholder values based on type
+        if (paramType == typeof(string))
+            return $"\"\"";  // Empty string placeholder
+        if (paramType == typeof(int))
+            return "0";
+        if (paramType == typeof(double) || paramType == typeof(float))
+            return "0.0";
+        if (paramType == typeof(bool))
+            return "false";
+        if (paramType == typeof(DateTime))
+            return $"\"{DateTime.Now:yyyy-MM-dd}\"";
+
+        // For other types, try to provide a sensible default
+        return "\"\"";
     }
 
     public List<(string? Type, string? Name)>? GetReturnProperties()
@@ -358,8 +458,13 @@
 
         try
         {
-            BackingNode.MethodOutputToNodeOutputMap = ViewModel.MethodOutputToNodeOutputMap;
-            BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap;
+            // Filter out any blank entries before saving (keep only if BOTH From and To have values)
+            BackingNode.MethodOutputToNodeOutputMap = ViewModel.MethodOutputToNodeOutputMap
+                .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
+                .ToList();
+            BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap
+                .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
+                .ToList();
             await SaveRequested.InvokeAsync();
 
             saveSuccess = true;
@@ -393,9 +498,156 @@
         StateHasChanged();
     }
 
-    public class NodeEditorModalViewModel 
+    private void AddInputMapping()
     {
-        public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [new()];
-        public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [new()];
+        var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
+        var mappedParams = new HashSet<string>(ViewModel.NodeInputToMethodInputMap.Select(m => m.To));
+
+        // Find the first unmapped parameter
+        var unmappedParam = parameters.FirstOrDefault(p =>
+            p.ParameterType != typeof(NodeContext) &&
+            !mappedParams.Contains(p.Name ?? string.Empty));
+
+        if (unmappedParam != null)
+        {
+            // Add mapping with smart default
+            var hasInputFieldAttr = unmappedParam.GetCustomAttribute<DrawflowWrapper.Drawflow.Attributes.DrawflowInputFieldAttribute>() != null;
+            var defaultValue = hasInputFieldAttr
+                ? GeneratePlaceholderLiteral(unmappedParam.ParameterType, unmappedParam.Name)
+                : $"{{{{input.{unmappedParam.Name}}}}}";
+
+            ViewModel.NodeInputToMethodInputMap.Add(new PathMapEntry
+            {
+                From = defaultValue,
+                To = unmappedParam.Name ?? string.Empty
+            });
+            StateHasChanged();
+        }
+        // Don't add empty mapping if all parameters are already mapped
+    }
+
+    private void AddOutputMapping()
+    {
+        var returnProps = GetReturnProperties();
+        if (returnProps != null && returnProps.Any())
+        {
+            var mappedProps = new HashSet<string>(ViewModel.MethodOutputToNodeOutputMap.Select(m => m.From));
+
+            // Find the first unmapped property
+            var unmappedProp = returnProps.FirstOrDefault(p =>
+                p.Name != null &&
+                !mappedProps.Contains(p.Name));
+
+            if (unmappedProp.Name != null)
+            {
+                // Add mapping with property name as both source and target
+                ViewModel.MethodOutputToNodeOutputMap.Add(new PathMapEntry
+                {
+                    From = unmappedProp.Name,
+                    To = unmappedProp.Name
+                });
+                StateHasChanged();
+            }
+            // Don't add empty mapping if all properties are already mapped
+        }
+        else
+        {
+            // For non-object return types (e.g., int, string), check if "result" is already mapped
+            var mappedProps = new HashSet<string>(ViewModel.MethodOutputToNodeOutputMap.Select(m => m.From));
+            if (!mappedProps.Contains("result"))
+            {
+                ViewModel.MethodOutputToNodeOutputMap.Add(new PathMapEntry
+                {
+                    From = "result",
+                    To = "result"
+                });
+                StateHasChanged();
+            }
+            // Don't add empty mapping if "result" is already mapped
+        }
+    }
+
+    private bool CanAddInputMapping()
+    {
+        var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
+        var availableParams = parameters.Where(p => p.ParameterType != typeof(NodeContext)).ToList();
+        var mappedParams = new HashSet<string>(ViewModel.NodeInputToMethodInputMap.Select(m => m.To).Where(t => !string.IsNullOrEmpty(t)));
+
+        // Can add if there are unmapped parameters
+        return availableParams.Any(p => !mappedParams.Contains(p.Name ?? string.Empty));
+    }
+
+    private IEnumerable<ParameterInfo> GetAvailableInputParameters(PathMapEntry currentMapping)
+    {
+        var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
+        var availableParams = parameters.Where(p => p.ParameterType != typeof(NodeContext)).ToList();
+
+        // Get all mapped parameter names except the current one
+        var mappedParams = new HashSet<string>(
+            ViewModel.NodeInputToMethodInputMap
+                .Where(m => m != currentMapping && !string.IsNullOrEmpty(m.To))
+                .Select(m => m.To)
+        );
+
+        // Return parameters that are either not mapped or are the current mapping's target
+        return availableParams.Where(p =>
+            !mappedParams.Contains(p.Name ?? string.Empty) ||
+            p.Name == currentMapping.To
+        );
+    }
+
+    private bool CanAddOutputMapping()
+    {
+        var returnProps = GetReturnProperties();
+
+        if (returnProps != null && returnProps.Any())
+        {
+            var mappedProps = new HashSet<string>(ViewModel.MethodOutputToNodeOutputMap.Select(m => m.From).Where(f => !string.IsNullOrEmpty(f)));
+            // Can add if there are unmapped properties
+            return returnProps.Any(p => p.Name != null && !mappedProps.Contains(p.Name));
+        }
+        else
+        {
+            // For non-object return types, can add if "result" is not mapped
+            var mappedProps = new HashSet<string>(ViewModel.MethodOutputToNodeOutputMap.Select(m => m.From).Where(f => !string.IsNullOrEmpty(f)));
+            return !mappedProps.Contains("result");
+        }
+    }
+
+    private IEnumerable<(string? Type, string? Name)> GetAvailableOutputProperties(PathMapEntry currentMapping, List<(string? Type, string? Name)> allProps)
+    {
+        // Get all mapped property names except the current one
+        var mappedProps = new HashSet<string>(
+            ViewModel.MethodOutputToNodeOutputMap
+                .Where(m => m != currentMapping && !string.IsNullOrEmpty(m.From))
+                .Select(m => m.From)
+        );
+
+        // Return properties that are either not mapped or are the current mapping's source
+        return allProps.Where(p =>
+            p.Name != null && (
+                !mappedProps.Contains(p.Name) ||
+                p.Name == currentMapping.From
+            )
+        );
+    }
+
+    private bool IsOutputValueAvailable(PathMapEntry currentMapping, string value)
+    {
+        // Get all mapped values except the current one
+        var mappedValues = new HashSet<string>(
+            ViewModel.MethodOutputToNodeOutputMap
+                .Where(m => m != currentMapping && !string.IsNullOrEmpty(m.From))
+                .Select(m => m.From)
+        );
+
+        // Value is available if not mapped or is the current mapping's source
+        return !mappedValues.Contains(value) || value == currentMapping.From;
+    }
+
+    public class NodeEditorModalViewModel
+    {
+        public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = new();
+        public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = new();
     }
 }

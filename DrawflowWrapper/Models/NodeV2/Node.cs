@@ -285,20 +285,67 @@ namespace DrawflowWrapper.Models.NodeV2
                 methodInvocationResponse = resultProperty?.GetValue(task);
             }
 
-            var serializedResponse = JsonSerializer.SerializeToNode(methodInvocationResponse);
-
             var resultObject = new JsonObject();
 
-            if (serializedResponse is not JsonObject methodOutputJsonObject)
+            // Get the actual return type (unwrap Task<T> if needed)
+            var actualReturnType = TypeHelpers.UnwrapTaskType(returnType);
+
+            // Check if this type has curated properties that need special handling
+            var curatedProperties = TypeHelpers.GetCuratedProperties(actualReturnType);
+            if (curatedProperties != null && methodInvocationResponse != null)
             {
-                resultObject.SetByPath("output.result", serializedResponse);
-            }
-            else
-            {
+                // For types with curated properties (like DateTime), extract properties using reflection
+                var methodOutputJsonObject = new JsonObject();
+                var responseType = methodInvocationResponse.GetType();
+
+                foreach (var prop in curatedProperties)
+                {
+                    if (prop.Name != null)
+                    {
+                        var propertyInfo = responseType.GetProperty(prop.Name);
+                        if (propertyInfo != null)
+                        {
+                            var propertyValue = propertyInfo.GetValue(methodInvocationResponse);
+                            methodOutputJsonObject[prop.Name] = JsonSerializer.SerializeToNode(propertyValue);
+                        }
+                    }
+                }
+
+                // Map curated properties to outputs
                 foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
                 {
                     var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
                     resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
+                }
+            }
+            else
+            {
+                // Standard serialization for other types
+                var serializedResponse = JsonSerializer.SerializeToNode(methodInvocationResponse);
+
+                // Check if this is a single-value type (like JsonObject, arrays, primitives)
+                // For these, we want to map the entire value to "result", not extract properties
+                bool isSingleValueType = TypeHelpers.ShouldTreatAsSingleValue(actualReturnType);
+
+                if (serializedResponse is not JsonObject methodOutputJsonObject || isSingleValueType)
+                {
+                    // Either not a JsonObject, or is a single-value type
+                    // Map the entire serialized response to the output
+                    foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
+                    {
+                        // For single-value types, the mapping is typically "result" -> "result"
+                        // Just map the whole serialized response
+                        resultObject.SetByPath($"output.{methodOutputMap.To}", serializedResponse);
+                    }
+                }
+                else
+                {
+                    // Complex object - extract individual properties
+                    foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
+                    {
+                        var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
+                        resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
+                    }
                 }
             }
 
@@ -335,6 +382,30 @@ namespace DrawflowWrapper.Models.NodeV2
 
                 methodParameterNameToValueMap.TryGetValue(parameter.Name!, out var value);
 
+                if (value is null)
+                {
+                    orderedMethodParameters[i] =
+                        parameter.ParameterType.IsValueType
+                            ? Activator.CreateInstance(parameter.ParameterType)
+                            : null;
+                    continue;
+                }
+
+                // Check if value is a simple path reference (no Scriban template expressions like {{ }})
+                // If so, get the JsonNode directly to preserve type information (especially for arrays/objects)
+                if (!value.Contains("{{") && !value.Contains("}}"))
+                {
+                    var jsonValue = inputPayload.GetByPath(value);
+                    if (jsonValue != null)
+                    {
+                        // Deserialize directly to the target type without template rendering
+                        // This preserves arrays, objects, and other complex types
+                        orderedMethodParameters[i] = jsonValue.CoerceToType(parameter.ParameterType);
+                        continue;
+                    }
+                }
+
+                // Fall back to template rendering for complex expressions
                 var modelDict = inputPayload.ToPlainObject()!;
 
                 var scriptObject = new ScriptObject();
@@ -349,15 +420,6 @@ namespace DrawflowWrapper.Models.NodeV2
                     !value.EndsWith("\""))
                 {
                     value = $"\"{value}\"";
-                }
-
-                if (value is null)
-                {
-                    orderedMethodParameters[i] =
-                        parameter.ParameterType.IsValueType
-                            ? Activator.CreateInstance(parameter.ParameterType)
-                            : null;
-                    continue;
                 }
 
                 var template = Template.Parse(value);
@@ -394,6 +456,8 @@ namespace DrawflowWrapper.Models.NodeV2
                 !trimmed.StartsWith("[") &&
                 !trimmed.StartsWith("\"") &&
                 !char.IsDigit(trimmed[0]) &&
+                !trimmed.StartsWith("-") &&  // Allow negative numbers
+                !trimmed.StartsWith("+") &&  // Allow explicit positive numbers
                 !"tfn".Contains(char.ToLowerInvariant(trimmed[0])))
             {
                 json = JsonSerializer.Serialize(input);

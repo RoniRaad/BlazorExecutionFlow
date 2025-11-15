@@ -81,7 +81,6 @@ namespace DrawflowWrapper.Helpers
                 cssClass: "",
                 data: new
                 {
-                    node,
                     outputPorts = node.DeclaredOutputPorts
                 },
                 html: $@"

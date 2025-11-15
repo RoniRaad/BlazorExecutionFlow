@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using System.Xml.Linq;
+using DrawflowWrapper.Helpers;
 using DrawflowWrapper.Models.NodeV2;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -38,8 +40,8 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
 
     /// <summary>Called after the JS editor is created.</summary>
     [Parameter] public EventCallback OnReady { get; set; }
-    // Your component/service already has something like:
- 
+
+    [Parameter] public Graph Graph { get; set; } = new();
     protected string ElementId => Id ?? $"df_{GetHashCode():x}";
 
     private static JsonSerializerOptions jsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -60,21 +62,269 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
             Editor = new DrawflowWrapper.Drawflow.DrawflowEditor(
                 callVoid: (m, a) => CallVoidAsync(m, a),
                 callObject: (m, a) => JS.InvokeAsync<object?>("DrawflowBlazor.call", ElementId, m, a));
+
+            // Clear existing graph
+            await CallAsync<object>("clear");
+
+            // Import nodes to drawflow
+            var json = DrawflowExporter.ExportToDrawflowJson(Graph.Nodes.Select(x => x.Value));
+            await CallAsync("import", json);
+            await JS.InvokeVoidAsync("nextFrame");
+
+            // Re-apply port labels for nodes with multiple outputs
+            foreach (var node in Graph.Nodes.Select(x => x.Value))
+            {
+                if (node.DeclaredOutputPorts.Count > 0)
+                {
+                    await JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
+                }
+            }
+
+            // Subscribe to Drawflow events to keep Graph in sync
+            await OnAsync("nodeCreated");
+            await OnAsync("nodeMoved");
+            await OnAsync("connectionCreated");
+            await OnAsync("connectionRemoved");
+            await OnAsync("nodeRemoved");
         }
     }
 
     [JSInvokable]
     public async Task OnDrawflowEvent(string name, string payloadJson)
     {
-        if (name == "connectionCreated")
+        _ = Task.Run(async () =>
         {
+            // Handle events that update the Graph
+            try
+            {
+                switch (name)
+                {
+                    case "nodeCreated":
+                        await HandleNodeCreated(payloadJson);
+                        break;
+
+                    case "nodeMoved":
+                        await HandleNodeMoved(payloadJson);
+                        break;
+
+                    case "connectionCreated":
+                        await HandleConnectionCreated(payloadJson);
+                        break;
+
+                    case "connectionRemoved":
+                        await HandleConnectionRemoved(payloadJson);
+                        break;
+
+                    case "nodeRemoved":
+                        await HandleNodeRemoved(payloadJson);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log but don't crash - just let the event through
+                Console.WriteLine($"Error handling Drawflow event '{name}': {ex.Message}");
+            }
+
+            // Also invoke the user's event handler if they have one
+            if (OnEvent.HasDelegate)
+            {
+                _ = InvokeAsync(() => OnEvent.InvokeAsync(new DrawflowEventArgs { Name = name, PayloadJson = payloadJson }));
+            }
+        });
+    }
+
+    private Task HandleNodeCreated(string payloadJson)
+    {
+        // nodeCreated events are forwarded to user event handlers via OnEvent,
+        // but we don't add them to our Graph since Node instances require a BackingMethod.
+        // Nodes in Graph are created programmatically with methods, not from UI interactions.
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleNodeMoved(string payloadJson)
+    {
+        // Parse: ["1"] - Drawflow passes just the node ID
+        var payload = JsonSerializer.Deserialize<JsonElement>(payloadJson, jsonSerializerOptions);
+
+        if (payload.ValueKind != JsonValueKind.Array || payload.GetArrayLength() == 0)
             return;
+
+        var nodeId = payload[0].ToString();
+
+        // We need to query the editor for the actual position since Drawflow doesn't pass it in the event
+        if (Graph.Nodes.TryGetValue(nodeId, out var node) && Editor != null)
+        {
+            try
+            {
+                var nodeData = await Editor.RawAsync<JsonElement>("getNodeFromId", nodeId);
+                if (nodeData.ValueKind == JsonValueKind.Object)
+                {
+                    if (nodeData.TryGetProperty("pos_x", out var posXProp))
+                        node.PosX = posXProp.GetDouble();
+                    if (nodeData.TryGetProperty("pos_y", out var posYProp))
+                        node.PosY = posYProp.GetDouble();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting node position: {ex.Message}");
+            }
+        }
+    }
+
+    private Task HandleConnectionCreated(string payloadJson)
+    {
+        // Parse: [{"output_id":"1","input_id":"2","output_class":"output_1","input_class":"input_1"}]
+        var payload = JsonSerializer.Deserialize<JsonElement>(payloadJson, jsonSerializerOptions);
+
+        if (payload.ValueKind != JsonValueKind.Array || payload.GetArrayLength() < 1)
+            return Task.CompletedTask;
+
+        var connectionObj = payload[0];
+        if (connectionObj.ValueKind != JsonValueKind.Object)
+            return Task.CompletedTask;
+
+        if (!connectionObj.TryGetProperty("output_id", out var outputIdProp) ||
+            !connectionObj.TryGetProperty("input_id", out var inputIdProp) ||
+            !connectionObj.TryGetProperty("output_class", out var outputClassProp))
+            return Task.CompletedTask;
+
+        var outputId = outputIdProp.GetString();
+        var inputId = inputIdProp.GetString();
+        var outputClass = outputClassProp.GetString();
+
+        if (string.IsNullOrEmpty(outputId) || string.IsNullOrEmpty(inputId) || string.IsNullOrEmpty(outputClass))
+            return Task.CompletedTask;
+
+        if (Graph.Nodes.TryGetValue(outputId, out var sourceNode) &&
+            Graph.Nodes.TryGetValue(inputId, out var targetNode))
+        {
+            // Determine port name from output_class (e.g., "output_1" -> first port)
+            var portName = "default";
+            if (sourceNode.DeclaredOutputPorts is { Count: > 0 } ports)
+            {
+                // Extract port index from "output_1", "output_2", etc.
+                var underscoreIndex = outputClass.LastIndexOf('_');
+                if (underscoreIndex >= 0 &&
+                    int.TryParse(outputClass.Substring(underscoreIndex + 1), out var portIndex) &&
+                    portIndex > 0 && portIndex <= ports.Count)
+                {
+                    portName = ports[portIndex - 1];
+                }
+            }
+
+            // Add connection
+            sourceNode.AddOutputConnection(portName, targetNode);
+
+            // Add to InputNodes if not already there
+            if (!targetNode.InputNodes.Contains(sourceNode))
+            {
+                targetNode.InputNodes.Add(sourceNode);
+            }
         }
 
-        if (OnEvent.HasDelegate)
+        return Task.CompletedTask;
+    }
+
+    private Task HandleConnectionRemoved(string payloadJson)
+    {
+        // Parse: ["output_id", "input_id", "output_class", "input_class"]
+        var payload = JsonSerializer.Deserialize<JsonElement>(payloadJson, jsonSerializerOptions);
+
+        if (payload.ValueKind != JsonValueKind.Array || payload.GetArrayLength() < 4)
+            return Task.CompletedTask;
+
+        var outputId = payload[0].ToString();
+        var inputId = payload[1].ToString();
+        var outputClass = payload[2].ToString();
+
+        if (Graph.Nodes.TryGetValue(outputId, out var sourceNode) &&
+            Graph.Nodes.TryGetValue(inputId, out var targetNode))
         {
-            await OnEvent.InvokeAsync(new DrawflowEventArgs { Name = name, PayloadJson = payloadJson });
+            // Determine port name
+            var portName = "default";
+            if (sourceNode.DeclaredOutputPorts is { Count: > 0 } ports)
+            {
+                var underscoreIndex = outputClass.LastIndexOf('_');
+                if (underscoreIndex >= 0 &&
+                    int.TryParse(outputClass.Substring(underscoreIndex + 1), out var portIndex) &&
+                    portIndex > 0 && portIndex <= ports.Count)
+                {
+                    portName = ports[portIndex - 1];
+                }
+            }
+
+            // Remove connection from OutputPorts
+            if (sourceNode.OutputPorts.TryGetValue(portName, out var targets))
+            {
+                targets.Remove(targetNode);
+                if (targets.Count == 0)
+                {
+                    sourceNode.OutputPorts.Remove(portName);
+                }
+            }
+
+            // Remove from OutputNodes
+            sourceNode.OutputNodes.Remove(targetNode);
+
+            // Check if targetNode still has other connections from sourceNode
+            bool hasOtherConnections = false;
+            foreach (var portTargets in sourceNode.OutputPorts.Values)
+            {
+                if (portTargets.Contains(targetNode))
+                {
+                    hasOtherConnections = true;
+                    break;
+                }
+            }
+
+            // Remove from InputNodes only if no other connections exist
+            if (!hasOtherConnections)
+            {
+                targetNode.InputNodes.Remove(sourceNode);
+            }
         }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleNodeRemoved(string payloadJson)
+    {
+        // Parse: ["id"] - Drawflow passes just the node ID
+        var payload = JsonSerializer.Deserialize<JsonElement>(payloadJson, jsonSerializerOptions);
+
+        if (payload.ValueKind != JsonValueKind.Array || payload.GetArrayLength() == 0)
+            return Task.CompletedTask;
+
+        var nodeId = payload[0].ToString();
+
+        if (Graph.Nodes.TryGetValue(nodeId, out var removedNode))
+        {
+            // Remove all connections to/from this node
+            foreach (var otherNode in Graph.Nodes.Values)
+            {
+                if (otherNode != removedNode)
+                {
+                    // Remove from input connections
+                    otherNode.InputNodes.Remove(removedNode);
+
+                    // Remove from output connections
+                    otherNode.OutputNodes.Remove(removedNode);
+
+                    // Remove from OutputPorts
+                    foreach (var portTargets in otherNode.OutputPorts.Values)
+                    {
+                        portTargets.Remove(removedNode);
+                    }
+                }
+            }
+
+            // Remove the node from the graph
+            Graph.Nodes.TryRemove(nodeId, out _);
+        }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>Subscribe to an event name (e.g., "nodeCreated").</summary>
@@ -118,6 +368,7 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
             Nodes = concurrentNodeDict
         };
     }
+
     public Node GenerateNodeV2(
     DrawflowGraph graph,
     DrawflowNode dfNode,
@@ -205,8 +456,7 @@ public partial class DrawflowBase : ComponentBase, IAsyncDisposable
             return null;
         }
 
-        var drawflowExportObj = await Editor.ExportAsync();
-        var drawflowJson = JsonSerializer.Serialize(drawflowExportObj);
+        var drawflowJson = await Editor.ExportAsync().ConfigureAwait(false);
         if (drawflowJson is null)
         {
             return null;

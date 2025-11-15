@@ -208,10 +208,11 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
             => string.Join(separator ?? string.Empty, input1 ?? string.Empty, input2 ?? string.Empty);
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
-        public static string JoinArray(string[] items, [DrawflowInputField] string separator = ",")
+        public static string JoinArray(JsonArray items, [DrawflowInputField] string separator = ",")
         {
-            items ??= Array.Empty<string>();
-            return string.Join(separator ?? string.Empty, items);
+            if (items == null || items.Count == 0) return string.Empty;
+            var stringValues = items.Select(node => node?.ToString() ?? string.Empty);
+            return string.Join(separator ?? string.Empty, stringValues);
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Strings")]
@@ -447,30 +448,37 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
         // ---------- Collections (string arrays) ----------
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static int ArrayLength(string[] items) => items?.Length ?? 0;
+        public static int ArrayLength(JsonArray items) => items?.Count ?? 0;
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static string ArrayElementOrDefault(string[] items, int index, [DrawflowInputField] string @default = "")
+        public static JsonNode? ArrayElementOrDefault(JsonArray items, int index)
         {
-            if (items == null || items.Length == 0) return @default ?? string.Empty;
-            if (index < 0 || index >= items.Length) return @default ?? string.Empty;
-            return items[index] ?? string.Empty;
+            if (items == null || items.Count == 0) return null;
+            if (index < 0 || index >= items.Count) return null;
+            return items[index];
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static string[] ArrayAppend(string[] items, string value)
+        public static JsonArray ArrayAppend(JsonArray items, JsonNode? value)
         {
-            items ??= Array.Empty<string>();
-            value ??= string.Empty;
-            return items.Concat(new[] { value }).ToArray();
+            var result = new JsonArray();
+            if (items != null)
+            {
+                foreach (var item in items)
+                {
+                    result.Add(item?.DeepClone());
+                }
+            }
+            result.Add(value?.DeepClone());
+            return result;
         }
 
         [DrawflowNodeMethod(Models.NodeType.Function, "Collections")]
-        public static bool ArrayContains(string[] items, string value, [DrawflowInputField] bool ignoreCase = false)
+        public static bool ArrayContains(JsonArray items, string value, [DrawflowInputField] bool ignoreCase = false)
         {
-            if (items == null) return false;
+            if (items == null || items.Count == 0) return false;
             var comparison = ignoreCase ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-            return items.Any(x => string.Equals(x ?? string.Empty, value ?? string.Empty, comparison));
+            return items.Any(x => string.Equals(x?.ToString() ?? string.Empty, value ?? string.Empty, comparison));
         }
 
         // ---------- JSON helpers (for payload work) ----------
@@ -889,6 +897,203 @@ namespace DrawflowWrapper.Drawflow.BaseNodes
                 await ctx.ExecutePortAsync("error");
                 return string.Empty;
             }
+        }
+
+        // ---------- String Utilities ----------
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "String")]
+        public static string Reverse([DrawflowInputField] string input)
+        {
+            if (string.IsNullOrEmpty(input)) return string.Empty;
+            char[] chars = input.ToCharArray();
+            Array.Reverse(chars);
+            return new string(chars);
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "String")]
+        public static string PadLeft([DrawflowInputField] string input, int totalWidth, [DrawflowInputField] string paddingChar = " ")
+        {
+            if (string.IsNullOrEmpty(input)) input = string.Empty;
+            char pad = string.IsNullOrEmpty(paddingChar) ? ' ' : paddingChar[0];
+            return input.PadLeft(totalWidth, pad);
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "String")]
+        public static string PadRight([DrawflowInputField] string input, int totalWidth, [DrawflowInputField] string paddingChar = " ")
+        {
+            if (string.IsNullOrEmpty(input)) input = string.Empty;
+            char pad = string.IsNullOrEmpty(paddingChar) ? ' ' : paddingChar[0];
+            return input.PadRight(totalWidth, pad);
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "String")]
+        public static string FormatString([DrawflowInputField] string template, [DrawflowInputField] string arg0 = "", [DrawflowInputField] string arg1 = "", [DrawflowInputField] string arg2 = "")
+        {
+            try
+            {
+                return string.Format(template, arg0, arg1, arg2);
+            }
+            catch
+            {
+                return template;
+            }
+        }
+
+        // ---------- Array Utilities ----------
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Array")]
+        public static string ArrayJoin(JsonArray items, [DrawflowInputField] string separator = ",")
+        {
+            if (items == null || items.Count == 0) return string.Empty;
+            var stringValues = items.Select(node => node?.ToString() ?? string.Empty);
+            return string.Join(separator, stringValues);
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Array")]
+        public static JsonNode? ArrayFirst(JsonArray items)
+        {
+            return items == null || items.Count == 0 ? null : items[0];
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Array")]
+        public static JsonNode? ArrayLast(JsonArray items)
+        {
+            return items == null || items.Count == 0 ? null : items[items.Count - 1];
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Array")]
+        public static int ArrayCount(JsonArray items)
+        {
+            return items?.Count ?? 0;
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Array")]
+        public static JsonArray ArrayReverse(JsonArray items)
+        {
+            if (items == null || items.Count == 0) return new JsonArray();
+            var reversed = new JsonArray();
+            for (int i = items.Count - 1; i >= 0; i--)
+            {
+                reversed.Add(items[i]?.DeepClone());
+            }
+            return reversed;
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Array")]
+        public static JsonNode? ArrayGet(JsonArray items, int index)
+        {
+            if (items == null || index < 0 || index >= items.Count) return null;
+            return items[index];
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Array")]
+        public static JsonArray ArraySlice(JsonArray items, int start, int count)
+        {
+            if (items == null || items.Count == 0) return new JsonArray();
+            if (start < 0) start = 0;
+            if (start >= items.Count) return new JsonArray();
+
+            int actualCount = Math.Min(count, items.Count - start);
+            if (actualCount <= 0) return new JsonArray();
+
+            var result = new JsonArray();
+            for (int i = start; i < start + actualCount; i++)
+            {
+                result.Add(items[i]?.DeepClone());
+            }
+            return result;
+        }
+
+        // ---------- Logic Utilities ----------
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Logic")]
+        public static bool IsNull(string? input)
+        {
+            return input == null;
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Logic")]
+        public static bool IsEmpty([DrawflowInputField] string? input)
+        {
+            return string.IsNullOrEmpty(input);
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Logic")]
+        public static bool IsWhitespace([DrawflowInputField] string? input)
+        {
+            return string.IsNullOrWhiteSpace(input);
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Logic")]
+        public static string Ternary(bool condition, [DrawflowInputField] string trueValue, [DrawflowInputField] string falseValue)
+        {
+            return condition ? trueValue : falseValue;
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Logic")]
+        public static int TernaryInt(bool condition, int trueValue, int falseValue)
+        {
+            return condition ? trueValue : falseValue;
+        }
+
+        // ---------- Math Utilities ----------
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Math")]
+        public static double Average(JsonArray numbers)
+        {
+            if (numbers == null || numbers.Count == 0) return 0;
+            var values = numbers.Select(n => n?.GetValue<double>() ?? 0).ToArray();
+            return values.Length > 0 ? values.Average() : 0;
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Math")]
+        public static double Sum(JsonArray numbers)
+        {
+            if (numbers == null || numbers.Count == 0) return 0;
+            var values = numbers.Select(n => n?.GetValue<double>() ?? 0).ToArray();
+            return values.Sum();
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Math")]
+        public static double AbsDiff(double a, double b)
+        {
+            return Math.Abs(a - b);
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Math")]
+        public static double MinOf(JsonArray numbers)
+        {
+            if (numbers == null || numbers.Count == 0) return 0;
+            var values = numbers.Select(n => n?.GetValue<double>() ?? 0).ToArray();
+            return values.Length > 0 ? values.Min() : 0;
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Math")]
+        public static double MaxOf(JsonArray numbers)
+        {
+            if (numbers == null || numbers.Count == 0) return 0;
+            var values = numbers.Select(n => n?.GetValue<double>() ?? 0).ToArray();
+            return values.Length > 0 ? values.Max() : 0;
+        }
+
+        // ---------- DateTime Utilities ----------
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        public static double DateDiffDays(DateTime startDate, DateTime endDate)
+        {
+            return (endDate - startDate).TotalDays;
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        public static double DateDiffHours(DateTime startDate, DateTime endDate)
+        {
+            return (endDate - startDate).TotalHours;
+        }
+
+        [DrawflowNodeMethod(Models.NodeType.Function, "Date/Time")]
+        public static string FormatDateTime(DateTime dateTime, [DrawflowInputField] string format = "yyyy-MM-dd HH:mm:ss")
+        {
+            return dateTime.ToString(format);
         }
 
     }

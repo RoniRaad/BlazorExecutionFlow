@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using DrawflowWrapper.Models.NodeV2;
 
 namespace DrawflowWrapper.Helpers
@@ -10,8 +11,31 @@ namespace DrawflowWrapper.Helpers
         private static readonly JsonSerializerOptions NodeSerializationOptions = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver
+            {
+                Modifiers = { ExcludeExecutionState }
+            }
         };
+
+        private static void ExcludeExecutionState(JsonTypeInfo typeInfo)
+        {
+            if (typeInfo.Type == typeof(Node))
+            {
+                // Exclude execution state properties from serialization
+                foreach (var property in typeInfo.Properties)
+                {
+                    if (property.Name == "Input" ||
+                        property.Name == "Result" ||
+                        property.Name == "InputNodes" ||
+                        property.Name == "OutputNodes" ||
+                        property.Name == "OutputPorts")
+                    {
+                        property.ShouldSerialize = (_, _) => false;
+                    }
+                }
+            }
+        }
 
         public static string ExportToDrawflowJson(IEnumerable<Node> nodes)
         {

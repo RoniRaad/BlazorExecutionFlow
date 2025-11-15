@@ -29,6 +29,11 @@ public sealed partial class DrawflowEditor
         // If it came back as JsonElement/JSON, try to convert to T:
         if (result is JsonElement je)
         {
+            // Special case: if T is string and we have a JsonElement, return the raw JSON text
+            if (typeof(T) == typeof(string))
+            {
+                return (T)(object)je.GetRawText();
+            }
             try { return je.Deserialize<T>(); } catch { return default; }
         }
 
@@ -46,7 +51,7 @@ public sealed partial class DrawflowEditor
     };
 
     public ValueTask ExportRawAsync() => _callVoid("export", Array.Empty<object?>()); // if you just need side-effects
-    public ValueTask<object?> ExportAsync() => CallAsync<object?>("export");
+    public ValueTask<string?> ExportAsync() => CallAsync<string?>("export");
 
     public ValueTask ImportAsync(object drawflowJson)
         => _callVoid("import", new[] { drawflowJson });

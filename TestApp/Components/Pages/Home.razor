@@ -31,7 +31,8 @@
     <div class="sidebar-panel">
         <div class="control-buttons">
             <button class="btn btn-sm btn-primary" @onclick="ImportTest" aria-label="Import test data">ImportTest</button>
-            <button class="btn btn-sm btn-primary" @onclick="Export" aria-label="Export workflow">Export</button>
+            <button class="btn btn-sm btn-success" @onclick="ExportCSharp" aria-label="Export to C# JSON">Export C#</button>
+            <button class="btn btn-sm btn-info" @onclick="() => showImportModal = true" aria-label="Import from C# JSON">Import C#</button>
             <button class="btn btn-sm btn-primary" @onclick="Clear" aria-label="Clear workflow">Clear</button>
             <button class="btn btn-sm btn-primary" @onclick="Run" aria-label="Run workflow">Run</button>
         </div>
@@ -97,21 +98,60 @@
     Style="height:600px;"
     Options="@options"
     OnEvent="HandleEvent"
-    OnNodeDoubleClicked="DoubleClickedNode" />
+    OnNodeDoubleClicked="DoubleClickedNode"
+    Graph="graph" />
 </div>
 
 @if (!string.IsNullOrWhiteSpace(_exportJson))
 {
-    <pre class="export-preview">@_exportJson</pre>
+    <div class="export-modal-backdrop" @onclick="() => _exportJson = null">
+        <div class="export-modal" @onclick:stopPropagation="true">
+            <div class="export-modal-header">
+                <h3>C# Flow Export</h3>
+                <button class="btn-close" @onclick="() => _exportJson = null">×</button>
+            </div>
+            <div class="export-modal-body">
+                <button class="btn btn-sm btn-primary mb-2" @onclick="CopyToClipboard">Copy to Clipboard</button>
+                <textarea class="export-textarea" readonly>@_exportJson</textarea>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showImportModal)
+{
+    <div class="export-modal-backdrop" @onclick="() => showImportModal = false">
+        <div class="export-modal" @onclick:stopPropagation="true">
+            <div class="export-modal-header">
+                <h3>Import C# Flow</h3>
+                <button class="btn-close" @onclick="() => showImportModal = false">×</button>
+            </div>
+            <div class="export-modal-body">
+                <textarea class="export-textarea" @bind="_importJson" placeholder="Paste C# Flow JSON here..."></textarea>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-primary" @onclick="ImportCSharp">Import</button>
+                    <button class="btn btn-sm btn-secondary" @onclick="() => showImportModal = false">Cancel</button>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_importError))
+                {
+                    <div class="alert alert-danger mt-2">@_importError</div>
+                }
+            </div>
+        </div>
+    </div>
 }
 
 @code {
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private DrawflowBase? _base;
     private string? _exportJson;
+    private string? _importJson;
+    private string? _importError;
     private List<Node> _nodes = [];
     private bool showModal = false;
+    private bool showImportModal = false;
     private Node? editNode = null;
+    private Graph graph = new();
 
     private string searchQuery = string.Empty;
     private string? selectedCategory = null;
@@ -150,7 +190,6 @@
 
     private async Task SaveChanges()
     {
-        var graph = await _base.CreateInternalV2Graph();
         var currentUiNode = graph.Nodes.First(x => x.Key == editNode.DrawflowNodeId);
         editNode.PosX = currentUiNode.Value.PosX;
         editNode.PosY = currentUiNode.Value.PosY;
@@ -181,7 +220,6 @@
 
     private async Task Run()
     {
-        var graph = await _base.CreateInternalV2Graph();
         foreach (var node in graph.Nodes)
         {
             node.Value.Result = null;
@@ -221,7 +259,8 @@
 
         if (returnProps is null)
         {
-            await _base.CreateNodeV2(node, "ƒ");
+            node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
+            graph.Nodes[node.DrawflowNodeId] = node;
             return;
         }
 
@@ -229,7 +268,8 @@
 
         node.MethodOutputToNodeOutputMap = returnProps.Select(x => new PathMapEntry() { From = x.Name, To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();
         node.NodeInputToMethodInputMap = node.BackingMethod.GetParameters().Select(x => new PathMapEntry() { From = "", To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();
-        await _base.CreateNodeV2(node, "ƒ");
+        node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
+        graph.Nodes[node.DrawflowNodeId] = node;
     }
 
     private async Task HandleEvent(DrawflowEventArgs e)
@@ -239,7 +279,6 @@
 
     private async Task DoubleClickedNode(string nodeId)
     {
-        var graph = await _base.CreateInternalV2Graph();
         var node = graph.Nodes.FirstOrDefault(x => x.Key == nodeId.ToString());
         editNode = node.Value;
         showModal = true;
@@ -258,6 +297,54 @@
         if (_base is null) return;
         var exported = await _base.CallAsync<object>("export");
         _exportJson = System.Text.Json.JsonSerializer.Serialize(exported, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private async Task ExportCSharp()
+    {
+        if (_base is null) return;
+        var nodes = graph.Nodes.Select(x => x.Value).ToList();
+        _exportJson = FlowSerializer.SerializeFlow(nodes);
+    }
+
+    private async Task ImportCSharp()
+    {
+        if (_base is null || string.IsNullOrWhiteSpace(_importJson)) return;
+
+        try
+        {
+            _importError = null;
+            var nodes = FlowSerializer.DeserializeFlow(_importJson);
+
+            // Clear existing graph
+            await _base.CallAsync<object>("clear");
+
+            // Import nodes to drawflow
+            var json = DrawflowExporter.ExportToDrawflowJson(nodes);
+            await _base.CallAsync("import", json);
+            await _base.JS.InvokeVoidAsync("nextFrame");
+
+            // Re-apply port labels for nodes with multiple outputs
+            foreach (var node in nodes)
+            {
+                if (node.DeclaredOutputPorts.Count > 0)
+                {
+                    await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
+                }
+            }
+
+            showImportModal = false;
+            _importJson = null;
+        }
+        catch (Exception ex)
+        {
+            _importError = $"Import failed: {ex.Message}";
+        }
+    }
+
+    private async Task CopyToClipboard()
+    {
+        if (_base is null || string.IsNullOrWhiteSpace(_exportJson)) return;
+        await _base.JS.InvokeVoidAsync("navigator.clipboard.writeText", _exportJson);
     }
 
     private async Task Clear()
