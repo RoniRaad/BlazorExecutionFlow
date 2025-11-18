@@ -126,6 +126,36 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 OutputNodes.Add(target);
         }
 
+        /// <summary>
+        /// Clears the cached result of this node, allowing it to be re-executed.
+        /// Useful for iteration scenarios where a node needs to run multiple times.
+        /// </summary>
+        public void ClearResult()
+        {
+            Result = null;
+            Input = null;
+            HasError = false;
+            ErrorMessage = null;
+            LastException = null;
+        }
+
+        /// <summary>
+        /// Recursively clears results for this node and all downstream nodes connected to a specific port.
+        /// This allows re-execution of a subgraph.
+        /// </summary>
+        public void ClearDownstreamResults(string? portName = null)
+        {
+            var targets = portName == null
+                ? OutputNodes
+                : (OutputPorts.TryGetValue(portName, out var list) ? list : new List<Node>());
+
+            foreach (var target in targets)
+            {
+                target.ClearResult();
+                target.ClearDownstreamResults(); // Recursively clear
+            }
+        }
+
         public async Task ExecuteNode(Node? caller = null)
         {
             await GetResult(caller ?? this);
