@@ -214,13 +214,13 @@
             node.Value.Result = null;
             node.Value.HasError = false;
             node.Value.ErrorMessage = null;
-            node.Value.OnStartExecuting += (x, y) => { _ = SetStatusAsync(node.Value.DrawflowNodeId, true); };
-            node.Value.OnStopExecuting += (x, y) => { _ = SetStatusAsync(node.Value.DrawflowNodeId, false); };
-            node.Value.OnError += HandleNodeError;
         }
 
+        // Event handlers are already attached during component initialization
+        // No need to re-attach them here
+
         // Find all start nodes in the graph
-        var startNodes = Graph.Nodes.Where(x => 
+        var startNodes = Graph.Nodes.Where(x =>
         {
             var attributes = x.Value.BackingMethod.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false);
             if (attributes.Length > 0 && ((BlazorFlowNodeMethodAttribute)attributes.First()).NodeType == NodeType.Event)
@@ -265,17 +265,54 @@
         // Error is stored in the node, execution continues
     }
 
+    /// <summary>
+    /// Attaches event handlers to all nodes for status updates.
+    /// This is critical for UI feedback - without it, status animations won't work.
+    /// </summary>
+    private void AttachNodeEventHandlers()
+    {
+        foreach (var node in Graph.Nodes)
+        {
+            // Remove any existing handlers first to avoid duplicates
+            node.Value.OnStartExecuting -= HandleNodeStartExecuting;
+            node.Value.OnStopExecuting -= HandleNodeStopExecuting;
+            node.Value.OnError -= HandleNodeError;
+
+            // Attach handlers
+            node.Value.OnStartExecuting += HandleNodeStartExecuting;
+            node.Value.OnStopExecuting += HandleNodeStopExecuting;
+            node.Value.OnError += HandleNodeError;
+        }
+    }
+
+    void HandleNodeStartExecuting(object? sender, EventArgs e)
+    {
+        if (sender is Node node)
+        {
+            _ = SetStatusAsync(node.DrawflowNodeId, true);
+        }
+    }
+
+    void HandleNodeStopExecuting(object? sender, EventArgs e)
+    {
+        if (sender is Node node)
+        {
+            _ = SetStatusAsync(node.DrawflowNodeId, false);
+        }
+    }
+
     private async Task Run()
     {
+        // Clear results and errors from previous runs
         foreach (var node in Graph.Nodes)
         {
             node.Value.Result = null;
             node.Value.HasError = false;
             node.Value.ErrorMessage = null;
-            node.Value.OnStartExecuting += (x, y) => { _ = SetStatusAsync(node.Value.DrawflowNodeId, true); };
-            node.Value.OnStopExecuting += (x, y) => { _ = SetStatusAsync(node.Value.DrawflowNodeId, false); };
-            node.Value.OnError += HandleNodeError;
         }
+
+        // Event handlers are already attached during component initialization
+        // No need to re-attach them here
 
         var startNodes = Graph.Nodes.Where(x => x.Value.BackingMethod.Name == nameof(BaseNodeCollection.Start));
         var tasks = new List<Task>();
@@ -295,6 +332,9 @@
         {
             node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
             Graph.Nodes[node.DrawflowNodeId] = node;
+
+            // Attach event handlers to new node
+            AttachNodeEventHandlers();
             return;
         }
 
@@ -302,6 +342,9 @@
         node.NodeInputToMethodInputMap = node.BackingMethod.GetParameters().Select(x => new PathMapEntry() { From = "", To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();
         node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
         Graph.Nodes[node.DrawflowNodeId] = node;
+
+        // Attach event handlers to new node
+        AttachNodeEventHandlers();
     }
 
     private async Task HandleEvent(DrawflowEventArgs e)
@@ -392,7 +435,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        _ = base.OnAfterRenderAsync(firstRender);
+        await base.OnAfterRenderAsync(firstRender);
 
         if (!firstRender) return;
 
@@ -403,6 +446,10 @@
             ElementId,
             _dotNetRef
         );
+
+        // Attach event handlers to all nodes for status updates
+        // This is CRITICAL for UI feedback (pulsing animations, error states, etc.)
+        AttachNodeEventHandlers();
     }
 
     [JSInvokable]
