@@ -334,6 +334,39 @@ window.DrawflowBlazor = (function () {
         }
     }
 
+    function setBulkNodeStatus(elementId, statusUpdates)
+    {
+        const host = document.getElementById(elementId);
+        if (!host || !statusUpdates) return;
+
+        // Process all status updates in a single DOM batch
+        // This is much faster than individual calls
+        for (const update of statusUpdates) {
+            const nodeEl =
+                host.querySelector(`.drawflow-node[data-id="${update.nodeId}"]`) ||
+                host.querySelector(`.drawflow-node#node-${update.nodeId}`);
+
+            if (!nodeEl) continue;
+
+            if (update.isRunning != null) {
+                if (update.isRunning) {
+                    nodeEl.classList.add("processing-bar");
+                } else {
+                    nodeEl.classList.remove("processing-bar");
+                }
+            }
+
+            if (update.hasError != null) {
+                if (update.hasError) {
+                    nodeEl.classList.add("node-error");
+                    nodeEl.setAttribute("title", update.errorMessage || "Error occurred");
+                } else {
+                    nodeEl.classList.remove("node-error");
+                }
+            }
+        }
+    }
+
     function setNodeDoubleClickCallback(elementId, callbackReference) {
         const host = document.getElementById(elementId);
         if (!host) return;
@@ -384,7 +417,7 @@ window.DrawflowBlazor = (function () {
         }
     }
 
-    return { create, destroy, on, off, call, get, set, labelPorts, setNodeStatus, setNodeDoubleClickCallback, setNodeWidthFromTitle, updateConnectionNodes };
+    return { create, destroy, on, off, call, get, set, labelPorts, setNodeStatus, setBulkNodeStatus, setNodeDoubleClickCallback, setNodeWidthFromTitle, updateConnectionNodes };
 })();
 
 window.nextFrame = () => {
