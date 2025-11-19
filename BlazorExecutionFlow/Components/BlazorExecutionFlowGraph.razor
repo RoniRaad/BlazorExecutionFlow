@@ -296,7 +296,11 @@
 
     private readonly Dictionary<string, DateTime> _lastStatusUpdate = new();
     private readonly Dictionary<string, long> _statusSequence = new();
+    private readonly Dictionary<string, (bool IsRunning, long Sequence)> _pendingStatusUpdates = new();
+    private readonly SemaphoreSlim _batchLock = new(1, 1);
     private readonly TimeSpan _statusUpdateThrottle = TimeSpan.FromMilliseconds(50); // Max 20 updates/sec per node
+    private readonly TimeSpan _batchWindow = TimeSpan.FromMilliseconds(10); // Batch updates within 10ms window
+    private bool _batchScheduled = false;
 
     void HandleNodeStartExecuting(object? sender, EventArgs e)
     {
@@ -318,14 +322,13 @@
         var sequence = ++_statusSequence[node.DrawflowNodeId];
         _lastStatusUpdate[node.DrawflowNodeId] = DateTime.UtcNow;
 
-        _ = InvokeAsync(async () =>
+        // Add to batch instead of calling immediately
+        lock (_pendingStatusUpdates)
         {
-            // Only apply if this is still the latest sequence
-            if (_statusSequence.TryGetValue(node.DrawflowNodeId, out var currentSeq) && sequence <= currentSeq)
-            {
-                await SetStatusAsync(node.DrawflowNodeId, true);
-            }
-        });
+            _pendingStatusUpdates[node.DrawflowNodeId] = (true, sequence);
+        }
+
+        ScheduleBatchUpdate();
     }
 
     void HandleNodeStopExecuting(object? sender, EventArgs e)
@@ -339,12 +342,68 @@
         var sequence = ++_statusSequence[node.DrawflowNodeId];
         _lastStatusUpdate[node.DrawflowNodeId] = DateTime.UtcNow;
 
-        _ = InvokeAsync(async () =>
+        // Add to batch instead of calling immediately
+        lock (_pendingStatusUpdates)
         {
-            // Only apply if this is still the latest sequence
-            if (_statusSequence.TryGetValue(node.DrawflowNodeId, out var currentSeq) && sequence <= currentSeq)
+            _pendingStatusUpdates[node.DrawflowNodeId] = (false, sequence);
+        }
+
+        ScheduleBatchUpdate();
+    }
+
+    private void ScheduleBatchUpdate()
+    {
+        lock (_pendingStatusUpdates)
+        {
+            if (_batchScheduled) return;
+            _batchScheduled = true;
+        }
+
+        // Fire and forget: schedule batch processing after a short delay
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(_batchWindow);
+            await ProcessBatchUpdates();
+        });
+    }
+
+    private async Task ProcessBatchUpdates()
+    {
+        Dictionary<string, (bool IsRunning, long Sequence)> batch;
+
+        lock (_pendingStatusUpdates)
+        {
+            if (_pendingStatusUpdates.Count == 0)
             {
-                await SetStatusAsync(node.DrawflowNodeId, false);
+                _batchScheduled = false;
+                return;
+            }
+
+            // Copy and clear pending updates
+            batch = new Dictionary<string, (bool, long)>(_pendingStatusUpdates);
+            _pendingStatusUpdates.Clear();
+            _batchScheduled = false;
+        }
+
+        // Marshal to UI thread once for the entire batch
+        await InvokeAsync(async () =>
+        {
+            // Build array of status updates for bulk JS call
+            var statusUpdates = batch
+                .Where(kvp => _statusSequence.TryGetValue(kvp.Key, out var currentSeq) && kvp.Value.Sequence <= currentSeq)
+                .Select(kvp => new
+                {
+                    nodeId = kvp.Key,
+                    isRunning = (bool?)kvp.Value.IsRunning,
+                    hasError = (bool?)null,
+                    errorMessage = (string?)null
+                })
+                .ToArray();
+
+            // Single bulk JS call instead of individual calls
+            if (statusUpdates.Length > 0)
+            {
+                await JS.InvokeVoidAsync("DrawflowBlazor.setBulkNodeStatus", ElementId, statusUpdates);
             }
         });
     }
