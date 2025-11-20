@@ -215,5 +215,83 @@ namespace BlazorExecutionFlow.Helpers
 
             return type;
         }
+
+        /// <summary>
+        /// Checks if a parameter type is auto-injected (IServiceProvider, NodeContext, or JSON payload types)
+        /// </summary>
+        public static bool IsAutoInjectedParameter(Type parameterType)
+        {
+            return parameterType == typeof(IServiceProvider) ||
+                   parameterType.Name == "NodeContext" ||
+                   IsJsonType(parameterType);
+        }
+
+        /// <summary>
+        /// Checks if a parameter is auto-injected (IServiceProvider, NodeContext, or JSON payload types)
+        /// </summary>
+        public static bool IsAutoInjectedParameter(ParameterInfo parameter)
+        {
+            return IsAutoInjectedParameter(parameter.ParameterType);
+        }
+
+        /// <summary>
+        /// Filters out auto-injected parameters (IServiceProvider, NodeContext, JSON payload types) from a parameter list
+        /// </summary>
+        public static IEnumerable<ParameterInfo> FilterAutoInjectedParameters(this ParameterInfo[] parameters)
+        {
+            return parameters.Where(p => !IsAutoInjectedParameter(p));
+        }
+
+        /// <summary>
+        /// Converts a property or parameter name to camelCase
+        /// </summary>
+        public static string ToCamelCase(string name)
+        {
+            if (string.IsNullOrEmpty(name) || name.Length < 1)
+                return name;
+
+            return $"{char.ToLower(name[0])}{name[1..]}";
+        }
+
+        /// <summary>
+        /// Adds spaces between PascalCase words.
+        /// Example: "ContainsString" -> "Contains String", "ForEachString" -> "For Each String"
+        /// </summary>
+        public static string AddSpacesToPascalCase(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            var result = new System.Text.StringBuilder(text.Length * 2);
+            result.Append(text[0]);
+
+            for (int i = 1; i < text.Length; i++)
+            {
+                // Add space before uppercase letters (except if previous char is also uppercase and next is lowercase)
+                if (char.IsUpper(text[i]))
+                {
+                    // Don't add space if:
+                    // 1. Previous character is uppercase AND
+                    // 2. Current is not the last character AND
+                    // 3. Next character is uppercase (handling acronyms like "XMLParser")
+                    if (i > 0 && char.IsUpper(text[i - 1]) &&
+                        i < text.Length - 1 && char.IsUpper(text[i + 1]))
+                    {
+                        result.Append(text[i]);
+                    }
+                    else
+                    {
+                        result.Append(' ');
+                        result.Append(text[i]);
+                    }
+                }
+                else
+                {
+                    result.Append(text[i]);
+                }
+            }
+
+            return result.ToString();
+        }
     }
 }

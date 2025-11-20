@@ -72,7 +72,7 @@
                             <button class="node-item"
                             @onclick="@(() => CreateNode(node))"
                             aria-label="Create @node.BackingMethod.Name node">
-                                <span class="node-name">@node.BackingMethod.Name</span>
+                                <span class="node-name">@TypeHelpers.AddSpacesToPascalCase(node.BackingMethod.Name)</span>
                                 <span class="node-category">@node.Section</span>
                             </button>
                         }
@@ -445,8 +445,9 @@
             return;
         }
 
-        node.MethodOutputToNodeOutputMap = returnProps.Select(x => new PathMapEntry() { From = x.Name, To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();
-        node.NodeInputToMethodInputMap = node.BackingMethod.GetParameters().Select(x => new PathMapEntry() { From = "", To = $"{char.ToLower(x.Name[0])}{x.Name[1..]}" }).ToList();
+        // Use smart mapping helper to generate intelligent default output mappings
+        node.MethodOutputToNodeOutputMap = MappingHelpers.GenerateSmartOutputMappings(node.BackingMethod, returnProps);
+        node.NodeInputToMethodInputMap = node.BackingMethod.GetParameters().Select(x => new PathMapEntry() { From = "", To = TypeHelpers.ToCamelCase(x.Name) }).ToList();
         node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
         Graph.Nodes[node.DrawflowNodeId] = node;
 

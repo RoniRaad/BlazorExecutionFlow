@@ -97,7 +97,7 @@ namespace BlazorExecutionFlow.Helpers
                         </h5>
                     </div>
                     <div class='title-container'>
-                        <div class='title' style='text-align: center;'>{node.BackingMethod.Name}</div>
+                        <div class='title' style='text-align: center;'>{TypeHelpers.AddSpacesToPascalCase(node.BackingMethod.Name)}</div>
                     </div>
                     <div class='main-content' style='min-width:300px'>
                         {inputHtml}

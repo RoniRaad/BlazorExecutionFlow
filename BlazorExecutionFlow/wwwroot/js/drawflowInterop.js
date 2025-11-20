@@ -23,8 +23,8 @@ window.DrawflowBlazor = (function () {
         }
 
         const editor = new Drawflow(el, opts);
-        window._df_editor = editor;                      // expose globally
-        window.dispatchEvent(new CustomEvent('editor:ready', { detail: { editor } })); // optional but nice
+        window._df_editor = editor;   
+        window.dispatchEvent(new CustomEvent('editor:ready', { detail: { editor } })); 
         if (typeof opts.reroute !== "undefined") editor.reroute = opts.reroute;
         editor.start();
 
@@ -34,35 +34,48 @@ window.DrawflowBlazor = (function () {
             end_pos_x,
             end_pos_y,
             curvature_value,
-            type // Drawflow passes a "type" arg, you can ignore it if you don't need it
+            type 
         ) {
             const dx = end_pos_x - start_pos_x;
             const dy = end_pos_y - start_pos_y;
 
-            // --- tune these to taste ---
-            const MIN_DISTANCE_FOR_CHECK = 40;   // ignore very short links
-            const BIG_BEND_RATIO = 1.5;          // how much vertical vs horizontal = "big bend"
-            // ----------------------------
-
             const absDx = Math.abs(dx);
             const absDy = Math.abs(dy);
 
-            if (end_pos_x < start_pos_x) {
-                // 90° path: horizontal → vertical → horizontal
+            if (end_pos_x < start_pos_x && absDy < 60)
+            {
                 start_pos_x = start_pos_x + 20;
                 end_pos_x = end_pos_x - 20;
-                const center_y = (start_pos_y + end_pos_y) / 2;
+                const y_modifier = dy > 0 ? 60 : -60;
+                const y_offset = y_modifier;
+
                 return (
                     'M ' + (start_pos_x - 20) + ' ' + start_pos_y + // move to start
-                    ' L ' + start_pos_x + ' ' + start_pos_y + // go horizontally
-                    ' L ' + start_pos_x + ' ' + center_y + // go horizontally
-                    ' L ' + end_pos_x + ' ' + center_y + // then vertically
-                    ' L ' + end_pos_x + ' ' + end_pos_y + // then vertically
-                    ' L ' + (end_pos_x + 20) + ' ' + end_pos_y     // then horizontally to end
+                    ' L ' + start_pos_x + ' ' + start_pos_y + // go to the right of the start
+                    ' L ' + start_pos_x + ' ' + (end_pos_y + (y_offset)) + // go down/up 50px
+                    ' L ' + end_pos_x + ' ' + (end_pos_y + (y_offset)) + // go down to the left of the end
+                    ' L ' + end_pos_x + ' ' + end_pos_y + // go down to the left of the end
+                    ' L ' + (end_pos_x + 20) + ' ' + end_pos_y   // go to the end
                 );
             }
 
-            // Default Drawflow-style bezier for smaller bends
+            if (end_pos_x < start_pos_x && absDy >= 60) {
+                start_pos_x = start_pos_x + 20;
+                end_pos_x = end_pos_x - 20;
+                const y_modifier = dy > 0 ? 1 : -1;
+                const y_offset = y_modifier * Math.min(60, absDy / 2);
+
+                return (
+                    'M ' + (start_pos_x - 20) + ' ' + start_pos_y + // move to start
+                    ' L ' + start_pos_x + ' ' + start_pos_y + // go to the right of the start
+                    ' L ' + start_pos_x + ' ' + (start_pos_y + (y_offset)) + // go down/up 50px
+                    ' L ' + end_pos_x + ' ' + (start_pos_y + (y_offset)) + // go to left/right end_pos
+                    ' L ' + end_pos_x + ' ' + (end_pos_y + (-y_offset)) + // go down to the left of the end
+                    ' L ' + end_pos_x + ' ' + end_pos_y  + // go down to the left of the end
+                    ' L ' + (end_pos_x + 20) + ' ' + end_pos_y   // go to the end
+                );
+            }
+
             const hx1 = start_pos_x + absDx * curvature_value;
             const hx2 = end_pos_x - absDx * curvature_value;
 
