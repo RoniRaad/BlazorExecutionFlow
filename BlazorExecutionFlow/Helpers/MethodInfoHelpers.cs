@@ -140,7 +140,7 @@ namespace BlazorExecutionFlow.Helpers
         /// <summary>
         /// Tries to find a method by matching name and parameter types more loosely.
         /// This helps when exact type matching fails due to assembly version differences.
-        /// Also handles auto-injected parameters (IServiceProvider, NodeContext) that are not serialized.
+        /// Also handles auto-injected parameters (IServiceProvider, NodeContext, JSON payload types) that are not serialized.
         /// </summary>
         private static MethodInfo? TryFindMethodBySignature(Type type, string methodName, Type[] expectedParamTypes)
         {
@@ -152,11 +152,10 @@ namespace BlazorExecutionFlow.Helpers
             {
                 var methodParams = method.GetParameters();
 
-                // Filter out auto-injected parameters (IServiceProvider, NodeContext)
+                // Filter out auto-injected parameters (IServiceProvider, NodeContext, JSON payload types)
                 // These are not serialized but may be present in the actual method
                 var filteredParams = methodParams
-                    .Where(p => p.ParameterType != typeof(IServiceProvider) &&
-                               p.ParameterType.Name != "NodeContext")
+                    .Where(p => !TypeHelpers.IsAutoInjectedParameter(p.ParameterType))
                     .ToArray();
 
                 // Check parameter count matches (after filtering)
@@ -263,7 +262,11 @@ namespace BlazorExecutionFlow.Helpers
         {
             string typeName = method.DeclaringType.AssemblyQualifiedName;
             string methodName = method.Name;
+
+            // Filter out auto-injected parameters (IServiceProvider, NodeContext, JSON payload types)
+            // These are provided at runtime and should not be included in the serialized signature
             string parameterTypes = string.Join(",", method.GetParameters()
+                .Where(p => !TypeHelpers.IsAutoInjectedParameter(p.ParameterType))
                 .Select(p => p.ParameterType.AssemblyQualifiedName));
 
             return $"{typeName}|{methodName}|{parameterTypes}";

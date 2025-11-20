@@ -54,6 +54,12 @@ try
     Console.WriteLine(new string('-', 80));
     Console.WriteLine();
 
+    // Run all nodes serialization test
+    await AllNodesSerializationTest.Run();
+
+    Console.WriteLine(new string('-', 80));
+    Console.WriteLine();
+
     // Run performance tests
     await NodeTests.RunAllTests();
 }

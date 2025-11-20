@@ -483,8 +483,8 @@ role="dialog"
 
         foreach (var param in parameters)
         {
-            // Skip NodeContext and IServiceProvider parameters as they're handled automatically
-            if (param.ParameterType == typeof(NodeContext) || param.ParameterType == typeof(IServiceProvider))
+            // Skip auto-injected parameters (NodeContext, IServiceProvider) as they're handled automatically
+            if (TypeHelpers.IsAutoInjectedParameter(param))
                 continue;
 
             // Check if parameter has DrawflowInputField attribute (means it should be a literal)
@@ -519,20 +519,291 @@ role="dialog"
 
         if (returnProps != null)
         {
+            // Get input parameter names for smart mapping (lowercase -> original name mapping)
+            var parameters = BackingNode.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
+            var inputParamMap = parameters
+                .Where(p => !TypeHelpers.IsAutoInjectedParameter(p) && !string.IsNullOrEmpty(p.Name))
+                .ToDictionary(p => p.Name!.ToLowerInvariant(), p => p.Name!);
+
+            // Get the actual return type for smart mapping
+            var returnType = BackingNode.BackingMethod?.ReturnType;
+
             foreach (var prop in returnProps)
             {
                 if (prop.Name != null)
                 {
+                    // Try to find a smart mapping target based on semantic meaning
+                    var targetName = FindSmartOutputTarget(prop.Name, prop.Type, returnType, inputParamMap) ?? prop.Name;
+
                     mappings.Add(new PathMapEntry
                     {
                         From = prop.Name,
-                        To = prop.Name  // Map to same name by default
+                        To = targetName
                     });
                 }
             }
         }
 
         return mappings;
+    }
+
+    /// <summary>
+    /// Finds a smart output mapping target by matching output property names
+    /// with input parameter names based on semantic meaning.
+    /// </summary>
+    private string? FindSmartOutputTarget(string outputPropName, string? outputTypeName, Type? methodReturnType, Dictionary<string, string> inputParamMap)
+    {
+        var lowerProp = outputPropName.ToLowerInvariant();
+
+        // Direct match first (case-insensitive)
+        if (inputParamMap.TryGetValue(lowerProp, out var exactMatch))
+            return exactMatch;
+
+        // Check if the actual type is a collection (for "result" that's actually a List/Array)
+        bool isActuallyCollection = IsCollectionType(methodReturnType, outputTypeName);
+
+        // Check if the actual type is a boolean (for "result" that's actually a bool)
+        bool isActuallyBoolean = IsBooleanType(methodReturnType, outputTypeName);
+
+        // Check if the actual type is a string
+        bool isActuallyString = IsStringType(methodReturnType, outputTypeName);
+
+        // Check if the actual type is an integer
+        bool isActuallyInteger = IsIntegerType(methodReturnType, outputTypeName);
+
+        // For generic "result" property, apply type-based semantic naming
+        if (lowerProp == "result")
+        {
+            // Boolean result -> "condition" (for If, While, Ternary nodes)
+            if (isActuallyBoolean)
+                return "condition";
+
+            // Collection result -> "collection" (for ForEach, Map nodes)
+            if (isActuallyCollection)
+            {
+                // Try to find collection-type input parameters in current node
+                var collectionInputs = new[] { "collection", "items", "list", "array", "data", "results" };
+                foreach (var candidate in collectionInputs)
+                {
+                    if (inputParamMap.TryGetValue(candidate, out var match))
+                        return match;
+                }
+                // Default to "collection" if no match found
+                return "collection";
+            }
+
+            // Integer result -> "count" (for counting/sizing nodes)
+            if (isActuallyInteger)
+                return "count";
+
+            // String result -> keep as "result" (most common case)
+            // Could return "text" here but "result" is fine for strings
+        }
+
+        // Boolean-named outputs -> "condition"
+        if (IsBooleanOutputName(lowerProp))
+            return "condition";
+
+        // Collection-named outputs -> "collection"
+        if (IsCollectionOutputName(lowerProp))
+            return "collection";
+
+        // String-named outputs -> prefer semantic names if they match current inputs
+        if (IsStringOutputName(lowerProp))
+        {
+            var stringInputs = new[] { "text", "message", "content", "str", "input", "value", "data" };
+            foreach (var candidate in stringInputs)
+            {
+                if (inputParamMap.TryGetValue(candidate, out var match))
+                    return match;
+            }
+        }
+
+        // Integer-named outputs -> prefer semantic names if they match current inputs
+        if (IsIntegerOutputName(lowerProp))
+        {
+            var integerInputs = new[] { "count", "number", "length", "size", "total", "index", "value" };
+            foreach (var candidate in integerInputs)
+            {
+                if (inputParamMap.TryGetValue(candidate, out var match))
+                    return match;
+            }
+        }
+
+        // Singular outputs (Item, Value, Output) -> try to find matching inputs
+        if (IsSingularOutputName(lowerProp) && !isActuallyCollection)
+        {
+            var singularInputs = new[] { "item", "value", "input", "data" };
+            foreach (var candidate in singularInputs)
+            {
+                if (inputParamMap.TryGetValue(candidate, out var match))
+                    return match;
+            }
+        }
+
+        // No smart mapping found, use the property name itself
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if a type is a collection type (List, Array, IEnumerable, etc.)
+    /// </summary>
+    private bool IsCollectionType(Type? returnType, string? typeName)
+    {
+        if (returnType == null)
+            return false;
+
+        // Unwrap Task<T> if needed
+        if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            returnType = returnType.GetGenericArguments()[0];
+        }
+
+        // Check if it's an array
+        if (returnType.IsArray)
+            return true;
+
+        // Check if it's a generic collection (List<T>, IEnumerable<T>, etc.)
+        if (returnType.IsGenericType)
+        {
+            var genericDef = returnType.GetGenericTypeDefinition();
+            return genericDef == typeof(List<>) ||
+                   genericDef == typeof(IEnumerable<>) ||
+                   genericDef == typeof(ICollection<>) ||
+                   genericDef == typeof(IList<>);
+        }
+
+        // Check by type name as fallback (in case typeName contains "List", "Array", etc.)
+        if (!string.IsNullOrEmpty(typeName))
+        {
+            var lowerType = typeName.ToLowerInvariant();
+            return lowerType.Contains("list") ||
+                   lowerType.Contains("array") ||
+                   lowerType.Contains("collection") ||
+                   lowerType.Contains("enumerable");
+        }
+
+        return false;
+    }
+
+    private bool IsCollectionOutputName(string name)
+    {
+        return name == "results" || name == "items" || name == "collection" ||
+               name == "list" || name == "array" || name == "data";
+    }
+
+    private bool IsSingularOutputName(string name)
+    {
+        return name == "result" || name == "item" || name == "value" ||
+               name == "output" || name == "data";
+    }
+
+    /// <summary>
+    /// Checks if a type is a boolean type
+    /// </summary>
+    private bool IsBooleanType(Type? returnType, string? typeName)
+    {
+        if (returnType == null)
+            return false;
+
+        // Unwrap Task<T> if needed
+        if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            returnType = returnType.GetGenericArguments()[0];
+        }
+
+        // Check if it's a bool
+        if (returnType == typeof(bool) || returnType == typeof(bool?))
+            return true;
+
+        // Check by type name as fallback
+        if (!string.IsNullOrEmpty(typeName))
+        {
+            var lowerType = typeName.ToLowerInvariant();
+            return lowerType.Contains("boolean") || lowerType == "bool";
+        }
+
+        return false;
+    }
+
+    private bool IsBooleanOutputName(string name)
+    {
+        return name == "success" || name == "valid" || name == "isvalid" ||
+               name == "enabled" || name == "active" || name == "flag" ||
+               name == "condition" || name.StartsWith("is") || name.StartsWith("has");
+    }
+
+    /// <summary>
+    /// Checks if a type is a string type
+    /// </summary>
+    private bool IsStringType(Type? returnType, string? typeName)
+    {
+        if (returnType == null)
+            return false;
+
+        // Unwrap Task<T> if needed
+        if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            returnType = returnType.GetGenericArguments()[0];
+        }
+
+        // Check if it's a string
+        if (returnType == typeof(string))
+            return true;
+
+        // Check by type name as fallback
+        if (!string.IsNullOrEmpty(typeName))
+        {
+            var lowerType = typeName.ToLowerInvariant();
+            return lowerType == "string";
+        }
+
+        return false;
+    }
+
+    private bool IsStringOutputName(string name)
+    {
+        return name == "text" || name == "message" || name == "content" ||
+               name == "str" || name == "description";
+    }
+
+    /// <summary>
+    /// Checks if a type is an integer type
+    /// </summary>
+    private bool IsIntegerType(Type? returnType, string? typeName)
+    {
+        if (returnType == null)
+            return false;
+
+        // Unwrap Task<T> if needed
+        if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            returnType = returnType.GetGenericArguments()[0];
+        }
+
+        // Check if it's an integer type
+        if (returnType == typeof(int) || returnType == typeof(int?) ||
+            returnType == typeof(long) || returnType == typeof(long?) ||
+            returnType == typeof(short) || returnType == typeof(short?) ||
+            returnType == typeof(byte) || returnType == typeof(byte?))
+            return true;
+
+        // Check by type name as fallback
+        if (!string.IsNullOrEmpty(typeName))
+        {
+            var lowerType = typeName.ToLowerInvariant();
+            return lowerType == "int32" || lowerType == "int64" ||
+                   lowerType == "int16" || lowerType == "byte" ||
+                   lowerType == "integer" || lowerType == "int";
+        }
+
+        return false;
+    }
+
+    private bool IsIntegerOutputName(string name)
+    {
+        return name == "count" || name == "number" || name == "length" ||
+               name == "size" || name == "total" || name == "index";
     }
 
     private string GeneratePlaceholderLiteral(Type paramType, string? paramName)
@@ -660,8 +931,7 @@ role="dialog"
 
         // Find the first unmapped parameter
         var unmappedParam = parameters.FirstOrDefault(p =>
-            p.ParameterType != typeof(NodeContext) &&
-            p.ParameterType != typeof(IServiceProvider) &&
+            !TypeHelpers.IsAutoInjectedParameter(p) &&
             !mappedParams.Contains(p.Name ?? string.Empty));
 
         if (unmappedParam != null)
@@ -726,9 +996,7 @@ role="dialog"
     private bool CanAddInputMapping()
     {
         var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
-        var availableParams = parameters.Where(p =>
-            p.ParameterType != typeof(NodeContext) &&
-            p.ParameterType != typeof(IServiceProvider)).ToList();
+        var availableParams = parameters.Where(p => !TypeHelpers.IsAutoInjectedParameter(p)).ToList();
         var mappedParams = new HashSet<string>(ViewModel.NodeInputToMethodInputMap.Select(m => m.To).Where(t => !string.IsNullOrEmpty(t)));
 
         // Can add if there are unmapped parameters
@@ -738,9 +1006,7 @@ role="dialog"
     private IEnumerable<ParameterInfo> GetAvailableInputParameters(PathMapEntry currentMapping)
     {
         var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
-        var availableParams = parameters.Where(p =>
-            p.ParameterType != typeof(NodeContext) &&
-            p.ParameterType != typeof(IServiceProvider)).ToList();
+        var availableParams = parameters.Where(p => !TypeHelpers.IsAutoInjectedParameter(p)).ToList();
 
         // Get all mapped parameter names except the current one
         var mappedParams = new HashSet<string>(
