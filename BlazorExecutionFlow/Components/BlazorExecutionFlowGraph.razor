@@ -169,8 +169,14 @@
             if (!string.IsNullOrWhiteSpace(searchQuery))
             {
                 filtered = filtered.Where(n =>
-                    n.BackingMethod.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    n.Section.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+                {
+                    var originalName = n.BackingMethod.Name;
+                    var displayName = TypeHelpers.AddSpacesToPascalCase(originalName);
+
+                    return originalName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                           displayName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                           n.Section.Contains(searchQuery, StringComparison.OrdinalIgnoreCase);
+                });
             }
 
             if (selectedCategory != null)
@@ -435,19 +441,13 @@
     {
         var returnProps = TypeHelpers.GetReturnProperties(node.BackingMethod);
 
-        if (returnProps is null)
+        if (returnProps?.Count > 0)
         {
-            node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
-            Graph.Nodes[node.DrawflowNodeId] = node;
-
-            // Attach event handlers to new node
-            AttachNodeEventHandlers();
-            return;
-        }
+            node.MethodOutputToNodeOutputMap = MappingHelpers.GenerateSmartOutputMappings(node.BackingMethod, returnProps);
+		}
 
         // Use smart mapping helper to generate intelligent default output mappings
-        node.MethodOutputToNodeOutputMap = MappingHelpers.GenerateSmartOutputMappings(node.BackingMethod, returnProps);
-        node.NodeInputToMethodInputMap = node.BackingMethod.GetParameters().Select(x => new PathMapEntry() { From = "", To = TypeHelpers.ToCamelCase(x.Name) }).ToList();
+        node.NodeInputToMethodInputMap = MappingHelpers.GenerateDefaultInputMappings(node.BackingMethod);
         node.DrawflowNodeId = (await _base.CreateNodeV2(node, "ƒ")).ToString();
         Graph.Nodes[node.DrawflowNodeId] = node;
 

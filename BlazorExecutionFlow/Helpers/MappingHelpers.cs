@@ -41,6 +41,43 @@ namespace BlazorExecutionFlow.Helpers
             return mappings;
         }
 
+        public static List<PathMapEntry> GenerateDefaultInputMappings(MethodInfo? method)
+        {
+            var mappings = new List<PathMapEntry>();
+            var parameters = method?.GetParameters() ?? Array.Empty<ParameterInfo>();
+
+            foreach (var param in parameters)
+            {
+                // Skip auto-injected parameters (NodeContext, IServiceProvider) as they're handled automatically
+                if (TypeHelpers.IsAutoInjectedParameter(param))
+                    continue;
+
+                // Check if parameter has DrawflowInputField attribute (means it should be a literal)
+                var hasInputFieldAttr = param.GetCustomAttribute<BlazorExecutionFlow.Flow.Attributes.BlazorFlowInputFieldAttribute>() != null;
+
+                string defaultValue;
+                if (hasInputFieldAttr)
+                {
+                    // For input fields, provide a placeholder literal value
+                    defaultValue = GeneratePlaceholderLiteral(param.ParameterType, param.Name);
+                }
+                else
+                {
+                    // For regular parameters, suggest mapping from input payload using template syntax
+                    defaultValue = $"{{{{input.{param.Name}}}}}";
+                }
+
+                mappings.Add(new PathMapEntry
+                {
+                    From = defaultValue,
+                    To = param.Name ?? string.Empty
+                });
+            }
+
+            return mappings;
+        }
+
+
         /// <summary>
         /// Find a smart output mapping target based on property name and return type
         /// </summary>
@@ -84,6 +121,24 @@ namespace BlazorExecutionFlow.Helpers
 
             // Default: camelCase the property name
             return TypeHelpers.ToCamelCase(outputPropName);
+        }
+
+        public static string GeneratePlaceholderLiteral(Type paramType, string? paramName)
+        {
+            // Generate helpful placeholder values based on type
+            if (paramType == typeof(string))
+                return $"\"\"";  // Empty string placeholder
+            if (paramType == typeof(int))
+                return "0";
+            if (paramType == typeof(double) || paramType == typeof(float))
+                return "0.0";
+            if (paramType == typeof(bool))
+                return "false";
+            if (paramType == typeof(DateTime))
+                return $"\"{DateTime.Now:yyyy-MM-dd}\"";
+
+            // For other types, try to provide a sensible default
+            return "\"\"";
         }
 
         #region Type Checking Methods

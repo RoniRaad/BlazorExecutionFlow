@@ -438,39 +438,8 @@ role="dialog"
 
         // Create a fresh ViewModel each time to avoid stale data
         ViewModel = new NodeEditorModalViewModel();
-
-        // Initialize with existing mappings or populate with smart defaults
-        if (BackingNode.NodeInputToMethodInputMap.Count == 0)
-        {
-            // Auto-populate input mappings with sensible defaults
-            var defaultMappings = GenerateDefaultInputMappings();
-            ViewModel.NodeInputToMethodInputMap = defaultMappings.Count > 0 ? defaultMappings : new List<PathMapEntry>();
-        }
-        else
-        {
-            // Filter out any blank/invalid entries when loading existing mappings
-            // Keep entries only if BOTH From and To have values
-            var validMappings = BackingNode.NodeInputToMethodInputMap
-                .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
-                .ToList();
-            ViewModel.NodeInputToMethodInputMap = validMappings.Count > 0 ? validMappings : GenerateDefaultInputMappings();
-        }
-
-        if (BackingNode.MethodOutputToNodeOutputMap.Count == 0)
-        {
-            // Auto-populate output mappings with property names or "result"
-            var defaultMappings = GenerateDefaultOutputMappings();
-            ViewModel.MethodOutputToNodeOutputMap = defaultMappings.Count > 0 ? defaultMappings : new List<PathMapEntry>();
-        }
-        else
-        {
-            // Filter out any blank/invalid entries when loading existing mappings
-            // Keep entries only if BOTH From and To have values
-            var validMappings = BackingNode.MethodOutputToNodeOutputMap
-                .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
-                .ToList();
-            ViewModel.MethodOutputToNodeOutputMap = validMappings.Count > 0 ? validMappings : GenerateDefaultOutputMappings();
-        }
+        ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
+        ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
 
         OutputPayloadJson = BackingNode?.Result;
         IncomingPayloadJson = BackingNode?.Input;

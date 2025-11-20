@@ -7,10 +7,23 @@
 @using System.Text.Json
 @using static BlazorExecutionFlow.Helpers.DrawflowHelpers
 
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Workflow Canvas</h1>
+            <p class="page-description">Drag nodes from the toolbar to build your visual workflow</p>
+        </div>
+    </div>
 
-<BlazorExecutionFlowGraph Id="BlazorExecutionFlow-demo"
-          Style="height:600px;"
-          Options="@options" />
+    <div class="canvas-container">
+        <div class="canvas-wrapper">
+            <BlazorExecutionFlowGraph
+                Id="BlazorExecutionFlow-demo"
+                Style="height:100vh;"
+                Options="@options" />
+        </div>
+    </div>
+</div>
 
 @code {
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
