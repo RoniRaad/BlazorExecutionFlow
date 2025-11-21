@@ -47,6 +47,9 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [];
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [];
 
+        // For Dictionary<string, string> parameters: maps parameter name -> list of key-value mappings
+        public Dictionary<string, List<PathMapEntry>> DictionaryParameterMappings { get; set; } = new();
+
         [JsonIgnore] public JsonObject? Input { get; set; }
         [JsonIgnore] public JsonObject? Result { get; set; }
 
@@ -515,6 +518,41 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 if (parameter.ParameterType == typeof(IServiceProvider))
                 {
                     orderedMethodParameters[i] = Helpers.NodeServiceProvider.Instance;
+                    continue;
+                }
+
+                // Handle Dictionary<string, string> parameters
+                if (parameter.ParameterType == typeof(Dictionary<string, string>))
+                {
+                    var dictionary = new Dictionary<string, string>();
+
+                    if (parameter.Name != null && DictionaryParameterMappings.TryGetValue(parameter.Name, out var dictMappings))
+                    {
+                        foreach (var mapping in dictMappings)
+                        {
+                            if (string.IsNullOrWhiteSpace(mapping.To)) // "To" is the dictionary key
+                                continue;
+
+                            string? dictValue = null;
+
+                            if (!string.IsNullOrWhiteSpace(mapping.From))
+                            {
+                                // Fall back to template rendering for complex expressions
+                                var dictModelDict = inputPayload.ToPlainObject()!;
+                                var dictScriptObject = new ScriptObject();
+                                dictScriptObject.Import(dictModelDict);
+                                var dictContext = new TemplateContext();
+                                dictContext.PushGlobal(dictScriptObject);
+
+                                var dictTemplate = Template.Parse(mapping.From);
+                                dictValue = dictTemplate.Render(dictContext);
+                            }
+
+                            dictionary[mapping.To] = dictValue ?? string.Empty;
+                        }
+                    }
+
+                    orderedMethodParameters[i] = dictionary;
                     continue;
                 }
 

@@ -49,7 +49,7 @@ namespace BlazorExecutionFlow.Helpers
             foreach (var param in parameters)
             {
                 // Skip auto-injected parameters (NodeContext, IServiceProvider) as they're handled automatically
-                if (TypeHelpers.IsAutoInjectedParameter(param))
+                if (!TypeHelpers.ShouldExposeParameter(param))
                     continue;
 
                 // Check if parameter has DrawflowInputField attribute (means it should be a literal)
@@ -89,7 +89,7 @@ namespace BlazorExecutionFlow.Helpers
             if (lowerProp == "result")
             {
                 // Boolean result -> "condition" (for If, While, Ternary nodes)
-                if (IsBooleanType(methodReturnType, outputTypeName))
+                 if (IsBooleanType(methodReturnType, outputTypeName))
                     return "condition";
 
                 // Collection result -> "collection" (for ForEach, Map nodes)
