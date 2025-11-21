@@ -27,14 +27,14 @@ jobs:
       run: dotnet restore BlazorFlow.sln
 
     - name: Build
-      run: dotnet build BlazorFlow.sln --configuration Release --no-restore
+      run: dotnet build BlazorExecutionFlow.sln --configuration Release --no-restore
 
     - name: Test
-      run: dotnet test BlazorFlow.sln --configuration Release --no-build --verbosity normal
+      run: dotnet test BlazorExecutionFlow.sln --configuration Release --no-build --verbosity normal
       continue-on-error: true  # Don't fail if no tests found
 
     - name: Pack (validation)
-      run: dotnet pack BlazorFlow/BlazorFlow.csproj --configuration Release --no-build --output ./packages
+      run: dotnet pack BlazorExecutionFlow/BlazorExecutionFlow.csproj --configuration Release --no-build --output ./packages
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
