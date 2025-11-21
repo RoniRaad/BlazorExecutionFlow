@@ -214,6 +214,78 @@ role="dialog"
                                 </div>
                             </div>
 
+                            <!-- Dictionary Parameters -->
+                            @{
+                                var dictParams = GetDictionaryParameters().ToList();
+                            }
+                            @if (dictParams.Any())
+                            {
+                                <hr class="panel-divider" />
+
+                                @foreach (var dictParam in dictParams)
+                                {
+                                    <div class="panel-section" data-role="dictionary-parameter-map">
+                                        <div class="panel-section-header">
+                                            <span>@dictParam.Name</span>
+                                            <button onclick="@(() => AddDictionaryEntry(dictParam.Name ?? string.Empty))" type="button"
+                                                    class="btn btn-xs btn-outline-secondary"
+                                                    data-role="add-dictionary-entry">
+                                                Add entry
+                                            </button>
+                                        </div>
+
+                                        <div class="mapping-list" data-role="dictionary-entry-list">
+                                            @{
+                                                if (!ViewModel.DictionaryParameterMappings.ContainsKey(dictParam.Name ?? string.Empty))
+                                                {
+                                                    ViewModel.DictionaryParameterMappings[dictParam.Name ?? string.Empty] = new List<PathMapEntry>();
+                                                }
+
+                                                var entries = ViewModel.DictionaryParameterMappings[dictParam.Name ?? string.Empty];
+                                            }
+
+                                            @foreach (var entry in entries)
+                                            {
+                                                <div class="mapping-row" data-role="dictionary-entry-row">
+                                                    <div class="mapping-col">
+                                                        <label>Dictionary key</label>
+                                                        <input @bind="entry.To"
+                                                               @bind:event="oninput"
+                                                               type="text"
+                                                               class="form-control form-control-sm"
+                                                               placeholder="e.g. Authorization, Content-Type"
+                                                               aria-label="Dictionary key"
+                                                               data-role="dictionary-key" />
+                                                    </div>
+                                                    <div class="mapping-arrow">→</div>
+                                                    <div class="mapping-col">
+                                                        <label>Value (payload path or template)</label>
+                                                        <input @bind="entry.From"
+                                                               @bind:event="oninput"
+                                                               type="text"
+                                                               class="form-control form-control-sm droppable-input"
+                                                               placeholder="e.g. input.token or {{input.token}}"
+                                                               aria-label="Dictionary value"
+                                                               @ondragover="@((e) => HandleDragOver(e))"
+                                                               @ondragover:preventDefault="true"
+                                                               @ondrop="@((e) => HandleDrop(e, entry))"
+                                                               data-role="dictionary-value" />
+                                                    </div>
+                                                    <button onclick="@(() => RemoveDictionaryEntry(dictParam.Name ?? string.Empty, entry))"
+                                                            type="button"
+                                                            class="btn btn-icon btn-xs"
+                                                            aria-label="Remove dictionary entry"
+                                                            title="Remove this dictionary entry"
+                                                            data-role="remove-dictionary-entry">
+                                                        <span aria-hidden="true">✕</span>
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            }
+
                             <hr class="panel-divider" />
 
                             <!-- Function output map -->
@@ -440,80 +512,10 @@ role="dialog"
         ViewModel = new NodeEditorModalViewModel();
         ViewModel.NodeInputToMethodInputMap = BackingNode.NodeInputToMethodInputMap;
         ViewModel.MethodOutputToNodeOutputMap = BackingNode.MethodOutputToNodeOutputMap;
+        ViewModel.DictionaryParameterMappings = new Dictionary<string, List<PathMapEntry>>(BackingNode.DictionaryParameterMappings);
 
         OutputPayloadJson = BackingNode?.Result;
         IncomingPayloadJson = BackingNode?.Input;
-    }
-
-    private List<PathMapEntry> GenerateDefaultInputMappings()
-    {
-        var mappings = new List<PathMapEntry>();
-        var parameters = BackingNode.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
-
-        foreach (var param in parameters)
-        {
-            // Skip auto-injected parameters (NodeContext, IServiceProvider) as they're handled automatically
-            if (TypeHelpers.IsAutoInjectedParameter(param))
-                continue;
-
-            // Check if parameter has DrawflowInputField attribute (means it should be a literal)
-            var hasInputFieldAttr = param.GetCustomAttribute<BlazorExecutionFlow.Flow.Attributes.BlazorFlowInputFieldAttribute>() != null;
-
-            string defaultValue;
-            if (hasInputFieldAttr)
-            {
-                // For input fields, provide a placeholder literal value
-                defaultValue = GeneratePlaceholderLiteral(param.ParameterType, param.Name);
-            }
-            else
-            {
-                // For regular parameters, suggest mapping from input payload using template syntax
-                defaultValue = $"{{{{input.{param.Name}}}}}";
-            }
-
-            mappings.Add(new PathMapEntry
-            {
-                From = defaultValue,
-                To = param.Name ?? string.Empty
-            });
-        }
-
-        return mappings;
-    }
-
-    private List<PathMapEntry> GenerateDefaultOutputMappings()
-    {
-        var mappings = new List<PathMapEntry>();
-        var returnProps = GetReturnProperties();
-
-        if (returnProps != null)
-        {
-            // Get input parameter names for smart mapping (lowercase -> original name mapping)
-            var parameters = BackingNode.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
-            var inputParamMap = parameters
-                .Where(p => !TypeHelpers.IsAutoInjectedParameter(p) && !string.IsNullOrEmpty(p.Name))
-                .ToDictionary(p => p.Name!.ToLowerInvariant(), p => p.Name!);
-
-            // Get the actual return type for smart mapping
-            var returnType = BackingNode.BackingMethod?.ReturnType;
-
-            foreach (var prop in returnProps)
-            {
-                if (prop.Name != null)
-                {
-                    // Try to find a smart mapping target based on semantic meaning
-                    var targetName = FindSmartOutputTarget(prop.Name, prop.Type, returnType, inputParamMap) ?? prop.Name;
-
-                    mappings.Add(new PathMapEntry
-                    {
-                        From = prop.Name,
-                        To = targetName
-                    });
-                }
-            }
-        }
-
-        return mappings;
     }
 
     /// <summary>
@@ -862,6 +864,14 @@ role="dialog"
             BackingNode.NodeInputToMethodInputMap = ViewModel.NodeInputToMethodInputMap
                 .Where(m => !string.IsNullOrWhiteSpace(m.From) && !string.IsNullOrWhiteSpace(m.To))
                 .ToList();
+
+            // Save dictionary parameter mappings (filter out blank entries)
+            BackingNode.DictionaryParameterMappings = ViewModel.DictionaryParameterMappings
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Where(m => !string.IsNullOrWhiteSpace(m.To)).ToList()
+                );
+
             await SaveRequested.InvokeAsync();
 
             saveSuccess = true;
@@ -898,9 +908,10 @@ role="dialog"
         var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
         var mappedParams = new HashSet<string>(ViewModel.NodeInputToMethodInputMap.Select(m => m.To));
 
-        // Find the first unmapped parameter
+        // Find the first unmapped parameter (excluding attributed dictionaries as they have their own section)
         var unmappedParam = parameters.FirstOrDefault(p =>
             !TypeHelpers.IsAutoInjectedParameter(p) &&
+            !(p.ParameterType == typeof(Dictionary<string, string>) && TypeHelpers.HasDictionaryMappingAttribute(p)) &&
             !mappedParams.Contains(p.Name ?? string.Empty));
 
         if (unmappedParam != null)
@@ -965,7 +976,10 @@ role="dialog"
     private bool CanAddInputMapping()
     {
         var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
-        var availableParams = parameters.Where(p => !TypeHelpers.IsAutoInjectedParameter(p)).ToList();
+        var availableParams = parameters
+            .Where(p => !TypeHelpers.IsAutoInjectedParameter(p) &&
+                        !(p.ParameterType == typeof(Dictionary<string, string>) && TypeHelpers.HasDictionaryMappingAttribute(p)))
+            .ToList();
         var mappedParams = new HashSet<string>(ViewModel.NodeInputToMethodInputMap.Select(m => m.To).Where(t => !string.IsNullOrEmpty(t)));
 
         // Can add if there are unmapped parameters
@@ -975,7 +989,10 @@ role="dialog"
     private IEnumerable<ParameterInfo> GetAvailableInputParameters(PathMapEntry currentMapping)
     {
         var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
-        var availableParams = parameters.Where(p => !TypeHelpers.IsAutoInjectedParameter(p)).ToList();
+        var availableParams = parameters
+            .Where(p => !TypeHelpers.IsAutoInjectedParameter(p) &&
+                        !(p.ParameterType == typeof(Dictionary<string, string>) && TypeHelpers.HasDictionaryMappingAttribute(p)))
+            .ToList();
 
         // Get all mapped parameter names except the current one
         var mappedParams = new HashSet<string>(
@@ -1044,6 +1061,7 @@ role="dialog"
     {
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = new();
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = new();
+        public Dictionary<string, List<PathMapEntry>> DictionaryParameterMappings { get; set; } = new();
     }
 
     private string GetScribanPreviewValue(string templateString)
@@ -1131,6 +1149,38 @@ role="dialog"
             // Replace the content with Scriban template syntax
             mapping.From = $"{{{{{_draggedFieldPath}}}}}";
             _draggedFieldPath = null;
+            StateHasChanged();
+        }
+    }
+
+    // Dictionary parameter methods
+    private IEnumerable<ParameterInfo> GetDictionaryParameters()
+    {
+        var parameters = BackingNode?.BackingMethod?.GetParameters() ?? Array.Empty<ParameterInfo>();
+        return parameters.Where(p => p.ParameterType == typeof(Dictionary<string, string>) && TypeHelpers.HasDictionaryMappingAttribute(p));
+    }
+
+    private void AddDictionaryEntry(string parameterName)
+    {
+        if (!ViewModel.DictionaryParameterMappings.ContainsKey(parameterName))
+        {
+            ViewModel.DictionaryParameterMappings[parameterName] = new List<PathMapEntry>();
+        }
+
+        ViewModel.DictionaryParameterMappings[parameterName].Add(new PathMapEntry
+        {
+            From = "",  // Value (payload path or template)
+            To = ""     // Dictionary key
+        });
+
+        StateHasChanged();
+    }
+
+    private void RemoveDictionaryEntry(string parameterName, PathMapEntry entry)
+    {
+        if (ViewModel.DictionaryParameterMappings.TryGetValue(parameterName, out var entries))
+        {
+            entries.Remove(entry);
             StateHasChanged();
         }
     }

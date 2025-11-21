@@ -696,9 +696,31 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         // ---------- HTTP ----------
         private static readonly HttpClient _httpClient = new();
 
+        private static void ApplyHeaders(HttpRequestMessage request, Dictionary<string, string>? headers)
+        {
+            if (headers == null) return;
+
+            foreach (var kvp in headers)
+            {
+                var key = kvp.Key;
+                var value = kvp.Value ?? string.Empty;
+
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    // Try to add to request headers first
+                    if (!request.Headers.TryAddWithoutValidation(key, value))
+                    {
+                        // If it fails, try adding to content headers (if content exists)
+                        request.Content?.Headers.TryAddWithoutValidation(key, value);
+                    }
+                }
+            }
+        }
+
         [BlazorFlowNodeMethod(Models.NodeType.Function, "HTTP")]
         public static async Task<string> HttpGetString(
             [BlazorFlowInputField] string url,
+            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
             [BlazorFlowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -710,7 +732,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             try
             {
-                var response = await _httpClient.GetAsync(url, cts.Token);
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                ApplyHeaders(request, headers);
+
+                var response = await _httpClient.SendAsync(request, cts.Token);
                 return await response.Content.ReadAsStringAsync(cts.Token);
             }
             catch (Exception ex)
@@ -723,6 +748,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         [BlazorFlowNodeMethod(Models.NodeType.Function, "HTTP")]
         public static async Task<int> HttpGetStatusCode(
             [BlazorFlowInputField] string url,
+            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
             [BlazorFlowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -734,7 +760,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             try
             {
-                var response = await _httpClient.GetAsync(url, cts.Token);
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                ApplyHeaders(request, headers);
+
+                var response = await _httpClient.SendAsync(request, cts.Token);
                 return (int)response.StatusCode;
             }
             catch (Exception ex)
@@ -748,6 +777,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         public static async Task<string> HttpPostString(
             [BlazorFlowInputField] string url,
             string body,
+            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
             [BlazorFlowInputField] string contentType = "application/json",
             [BlazorFlowInputField] int timeoutMs = 10000)
         {
@@ -763,8 +793,11 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             try
             {
-                using var content = new StringContent(body, Encoding.UTF8, contentType);
-                var response = await _httpClient.PostAsync(url, content, cts.Token);
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Content = new StringContent(body, Encoding.UTF8, contentType);
+                ApplyHeaders(request, headers);
+
+                var response = await _httpClient.SendAsync(request, cts.Token);
                 return await response.Content.ReadAsStringAsync(cts.Token);
             }
             catch (Exception ex)
@@ -778,6 +811,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         public static async Task<int> HttpPostStatusCode(
             [BlazorFlowInputField] string url,
             string body,
+            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
             [BlazorFlowInputField] string contentType = "application/json",
             [BlazorFlowInputField] int timeoutMs = 10000)
         {
@@ -793,8 +827,11 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             try
             {
-                using var content = new StringContent(body, Encoding.UTF8, contentType);
-                var response = await _httpClient.PostAsync(url, content, cts.Token);
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Content = new StringContent(body, Encoding.UTF8, contentType);
+                ApplyHeaders(request, headers);
+
+                var response = await _httpClient.SendAsync(request, cts.Token);
                 return (int)response.StatusCode;
             }
             catch (Exception ex)
@@ -810,6 +847,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         public static async Task<string> HttpGetFlow(
             NodeContext ctx,
             [BlazorFlowInputField] string url,
+            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
             [BlazorFlowInputField] int timeoutMs = 10000)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -824,7 +862,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             try
             {
-                var response = await _httpClient.GetAsync(url, cts.Token);
+                using var request = new HttpRequestMessage(HttpMethod.Get, url);
+                ApplyHeaders(request, headers);
+
+                var response = await _httpClient.SendAsync(request, cts.Token);
                 var body = await response.Content.ReadAsStringAsync(cts.Token);
 
                 // You can still branch based on success
@@ -855,6 +896,7 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
             NodeContext ctx,
             [BlazorFlowInputField] string url,
             string body,
+            [BlazorFlowDictionaryMapping] Dictionary<string, string>? headers = null,
             [BlazorFlowInputField] string contentType = "application/json",
             [BlazorFlowInputField] int timeoutMs = 10000)
         {
@@ -873,8 +915,11 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
 
             try
             {
-                using var content = new StringContent(body, Encoding.UTF8, contentType);
-                var response = await _httpClient.PostAsync(url, content, cts.Token);
+                using var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Content = new StringContent(body, Encoding.UTF8, contentType);
+                ApplyHeaders(request, headers);
+
+                var response = await _httpClient.SendAsync(request, cts.Token);
                 var responseBody = await response.Content.ReadAsStringAsync(cts.Token);
 
                 if (response.IsSuccessStatusCode)

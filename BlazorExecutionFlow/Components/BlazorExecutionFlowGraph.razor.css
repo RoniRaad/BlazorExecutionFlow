@@ -416,7 +416,7 @@ h1 {
 }
 
 .panel-body-scroll {
-    overflow: hidden;
+    overflow: auto;
 }
 
 .panel-section {

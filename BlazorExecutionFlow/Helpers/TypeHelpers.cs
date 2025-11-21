@@ -2,11 +2,22 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using BlazorExecutionFlow.Flow.Attributes;
 
 namespace BlazorExecutionFlow.Helpers
 {
     public static class TypeHelpers
     {
+        /// <summary>
+        /// Checks if a parameter has the BlazorFlowDictionaryMapping attribute,
+        /// indicating it should use the dictionary mapping UI.
+        /// </summary>
+        public static bool HasDictionaryMappingAttribute(ParameterInfo parameter)
+        {
+            return parameter.GetCustomAttribute<BlazorFlowDictionaryMappingAttribute>() != null;
+        }
+
+
         /// <summary>
         /// Gets the return properties for a method's return type.
         /// For primitive types, strings, and collections, returns a single "result" property.
@@ -232,6 +243,13 @@ namespace BlazorExecutionFlow.Helpers
         public static bool IsAutoInjectedParameter(ParameterInfo parameter)
         {
             return IsAutoInjectedParameter(parameter.ParameterType);
+        }
+
+        public static bool ShouldExposeParameter(ParameterInfo parameter)
+        {
+            var isDictionaryMapped = HasDictionaryMappingAttribute(parameter);
+
+            return !IsAutoInjectedParameter(parameter) && !isDictionaryMapped;
         }
 
         /// <summary>
