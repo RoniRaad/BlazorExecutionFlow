@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Xml.Linq;
 using BlazorExecutionFlow.Components;
 using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Flow.BaseNodes;
@@ -19,6 +20,38 @@ namespace BlazorExecutionFlow.Helpers
             public Dictionary<int, object> OutputPortResults { get; set; } = [];
         }
 
+        public static Node CreateNodeFromMethod(MethodInfo method)
+        {
+            var nodeType = NodeType.Function;
+            var section = "Default";
+            var parameters = method.GetParameters();
+            var output = method.ReturnParameter;
+            List<DfPorts> dfOutputPorts = [];
+            List<DfPorts> dfInputPorts = [];
+
+            var functionAttribute = method.GetCustomAttribute(typeof(BlazorFlowNodeMethodAttribute)) as BlazorFlowNodeMethodAttribute;
+            section = functionAttribute?.Section ?? section;
+            nodeType = functionAttribute?.NodeType ?? nodeType;
+
+            var paramsFromPorts = parameters.Where(x => !x.CustomAttributes.Any()
+                || x.CustomAttributes.All(attr => attr.AttributeType != typeof(BlazorFlowInputFieldAttribute)));
+
+            var paramsFromInputFields = parameters.Where(x => x.CustomAttributes.Any(attr => attr.AttributeType == typeof(BlazorFlowInputFieldAttribute)));
+
+            // NEW: read port metadata
+            var flowPortsAttr = method.GetCustomAttribute<NodeFlowPortsAttribute>();
+            var declaredPorts = flowPortsAttr?.Ports?.ToList() ?? new List<string>();
+
+            var node = new Node
+            {
+                Section = section,
+                BackingMethod = method,
+                DeclaredOutputPorts = declaredPorts
+            };
+
+            return node;
+        }
+
         public static List<Node> GetNodesObjectsV2()
         {
             var nodes = new List<Node>();
@@ -29,40 +62,11 @@ namespace BlazorExecutionFlow.Helpers
             foreach (var type in registeredTypes)
             {
                 var methodsWithAttr = type.GetMethods(BindingFlags.Public | BindingFlags.Static)
-                    .Where(m => m.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false).Length > 0);
+                       .Where(m => m.GetCustomAttributes(typeof(BlazorFlowNodeMethodAttribute), false).Length > 0);
 
                 foreach (var method in methodsWithAttr)
                 {
-                    var nodeType = NodeType.Function;
-                    var section = "Default";
-                    var parameters = method.GetParameters();
-                    var output = method.ReturnParameter;
-                    List<DfPorts> dfOutputPorts = [];
-                    List<DfPorts> dfInputPorts = [];
-
-                    var functionAttribute = method.GetCustomAttribute(typeof(BlazorFlowNodeMethodAttribute)) as BlazorFlowNodeMethodAttribute;
-                    section = functionAttribute?.Section ?? section;
-                    nodeType = functionAttribute?.NodeType ?? nodeType;
-
-                    var paramsFromPorts = parameters.Where(x => !x.CustomAttributes.Any()
-                        || x.CustomAttributes.All(attr => attr.AttributeType != typeof(BlazorFlowInputFieldAttribute)));
-
-                    var paramsFromInputFields = parameters.Where(x => x.CustomAttributes.Any(attr => attr.AttributeType == typeof(BlazorFlowInputFieldAttribute)));
-
-                    // NEW: read port metadata
-                    var flowPortsAttr = method.GetCustomAttribute<NodeFlowPortsAttribute>();
-                    var declaredPorts = flowPortsAttr?.Ports?.ToList() ?? new List<string>();
-
-                    var node = new Node
-                    {
-                        Section = section,
-                        BackingMethod = method,
-                        DeclaredOutputPorts = declaredPorts
-                    };
-
-                    var serializedMethod = MethodInfoHelpers.ToSerializableString(method);
-
-                    nodes.Add(node);
+                    nodes.Add(CreateNodeFromMethod(method));
                 }
             }
 
