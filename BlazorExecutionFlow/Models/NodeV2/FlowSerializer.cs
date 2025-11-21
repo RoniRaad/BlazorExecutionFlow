@@ -47,6 +47,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     MethodSignature = MethodInfoHelpers.ToSerializableString(node.BackingMethod),
                     NodeInputToMethodInputMap = node.NodeInputToMethodInputMap,
                     MethodOutputToNodeOutputMap = node.MethodOutputToNodeOutputMap,
+                    DictionaryParameterMappings = node.DictionaryParameterMappings,
                     Input = node.Input,
                     Result = node.Result,
                     MergeOutputWithInput = node.MergeOutputWithInput,
@@ -93,8 +94,18 @@ namespace BlazorExecutionFlow.Models.NodeV2
             var nodes = new List<Node>();
             var nodeMap = new Dictionary<string, Node>();
 
-            // First pass: create all node objects
+            // Remove duplicate nodes (keep first occurrence of each unique ID)
+            var uniqueNodes = new Dictionary<string, SerializableNode>();
             foreach (var serNode in flow.Nodes)
+            {
+                if (!uniqueNodes.ContainsKey(serNode.Id))
+                {
+                    uniqueNodes[serNode.Id] = serNode;
+                }
+            }
+
+            // First pass: create all node objects
+            foreach (var serNode in uniqueNodes.Values)
             {
                 var method = MethodInfoHelpers.FromSerializableString(serNode.MethodSignature);
 
@@ -108,6 +119,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     PosY = serNode.PosY,
                     NodeInputToMethodInputMap = serNode.NodeInputToMethodInputMap ?? new List<PathMapEntry>(),
                     MethodOutputToNodeOutputMap = serNode.MethodOutputToNodeOutputMap ?? new List<PathMapEntry>(),
+                    DictionaryParameterMappings = serNode.DictionaryParameterMappings ?? new Dictionary<string, List<PathMapEntry>>(),
                     Input = serNode.Input,
                     Result = serNode.Result,
                     MergeOutputWithInput = serNode.MergeOutputWithInput,
@@ -119,10 +131,10 @@ namespace BlazorExecutionFlow.Models.NodeV2
             }
 
             // Second pass: restore connections
-            for (int i = 0; i < flow.Nodes.Count; i++)
+            for (int i = 0; i < nodes.Count; i++)
             {
-                var serNode = flow.Nodes[i];
                 var node = nodes[i];
+                var serNode = uniqueNodes[node.Id];
 
                 // Restore input connections
                 foreach (var inputId in serNode.InputNodeIds)
@@ -233,6 +245,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public string MethodSignature { get; set; } = string.Empty;
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = new();
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = new();
+        public Dictionary<string, List<PathMapEntry>> DictionaryParameterMappings { get; set; } = new();
         public JsonObject? Input { get; set; }
         public JsonObject? Result { get; set; }
         public bool MergeOutputWithInput { get; set; }

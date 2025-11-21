@@ -458,9 +458,35 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 // Standard serialization for other types
                 var serializedResponse = JsonSerializer.SerializeToNode(methodInvocationResponse);
 
+                // If the response is a string that contains valid JSON, parse it
+                // This allows string results (like HTTP responses) to be indexed like JSON
+                if (serializedResponse is JsonValue jsonValue &&
+                    jsonValue.GetValueKind() == JsonValueKind.String)
+                {
+                    var stringValue = jsonValue.GetValue<string>();
+                    if (!string.IsNullOrWhiteSpace(stringValue))
+                    {
+                        try
+                        {
+                            // Try to parse the string as JSON
+                            var parsed = JsonNode.Parse(stringValue);
+                            if (parsed != null)
+                            {
+                                serializedResponse = parsed;
+                            }
+                        }
+                        catch
+                        {
+                            // Not valid JSON, keep as string
+                        }
+                    }
+                }
+
                 // Check if this is a single-value type (like JsonObject, arrays, primitives)
                 // For these, we want to map the entire value to "result", not extract properties
-                bool isSingleValueType = TypeHelpers.ShouldTreatAsSingleValue(actualReturnType);
+                // However, if we've parsed a JSON string into an object, treat it as a complex object
+                bool isSingleValueType = TypeHelpers.ShouldTreatAsSingleValue(actualReturnType) &&
+                                        serializedResponse is not JsonObject;
 
                 if (serializedResponse is not JsonObject methodOutputJsonObject || isSingleValueType)
                 {
@@ -478,8 +504,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     // Complex object - extract individual properties
                     foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
                     {
-                        var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
-                        resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
+                        resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputJsonObject);
                     }
                 }
             }

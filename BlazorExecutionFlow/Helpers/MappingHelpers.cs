@@ -95,12 +95,6 @@ namespace BlazorExecutionFlow.Helpers
                 // Collection result -> "collection" (for ForEach, Map nodes)
                 if (IsCollectionType(methodReturnType, outputTypeName))
                     return "collection";
-
-                // Integer result -> "count" (for counting/sizing nodes)
-                if (IsIntegerType(methodReturnType, outputTypeName))
-                    return "count";
-
-                // String result -> keep as "result" (most common case)
             }
 
             // Boolean-named outputs -> "condition"
@@ -110,10 +104,6 @@ namespace BlazorExecutionFlow.Helpers
             // Collection-named outputs -> "collection"
             if (IsCollectionOutputName(lowerProp))
                 return "collection";
-
-            // Integer-named outputs -> "count"
-            if (IsIntegerOutputName(lowerProp))
-                return "count";
 
             // String-named outputs -> "text"
             if (IsStringOutputName(lowerProp))

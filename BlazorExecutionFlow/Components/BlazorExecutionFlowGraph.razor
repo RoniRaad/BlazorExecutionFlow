@@ -437,8 +437,9 @@
         await Task.WhenAll(tasks);
     }
 
-    private async Task CreateNode(Node node)
+    private async Task CreateNode(Node nodeTemplate)
     {
+        var node = DrawflowHelpers.CreateNodeFromMethod(nodeTemplate.BackingMethod);
         var returnProps = TypeHelpers.GetReturnProperties(node.BackingMethod);
 
         if (returnProps?.Count > 0)
