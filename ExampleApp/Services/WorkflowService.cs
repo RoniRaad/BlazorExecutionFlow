@@ -55,8 +55,8 @@ public class WorkflowService
         var workflow1 = new WorkflowInfo
         {
             Id = "sample-1",
-            Name = "Data Processing Pipeline",
-            Description = "Fetches data from an API, processes it, and stores results",
+            Name = "Example: Data Processing Pipeline",
+            Description = "Example workflow that fetches data from an API, processes it, and stores results",
             CreatedAt = DateTime.Now.AddDays(-10),
             ModifiedAt = DateTime.Now.AddDays(-2),
             Inputs = new Dictionary<string, string>
@@ -95,8 +95,8 @@ public class WorkflowService
         var workflow2 = new WorkflowInfo
         {
             Id = "sample-2",
-            Name = "Email Campaign Automation",
-            Description = "Sends personalized emails to subscribers based on their preferences",
+            Name = "Example: Email Campaign Automation",
+            Description = "Example workflow that sends personalized emails to subscribers based on their preferences",
             CreatedAt = DateTime.Now.AddDays(-5),
             ModifiedAt = DateTime.Now.AddDays(-1),
             Inputs = new Dictionary<string, string>
@@ -126,8 +126,8 @@ public class WorkflowService
         var workflow3 = new WorkflowInfo
         {
             Id = "sample-3",
-            Name = "Report Generator",
-            Description = "Generates weekly analytics reports and uploads to cloud storage",
+            Name = "Example: Report Generator",
+            Description = "Example workflow that generates weekly analytics reports and uploads to cloud storage",
             CreatedAt = DateTime.Now.AddDays(-15),
             ModifiedAt = DateTime.Now.AddDays(-15),
             Inputs = new Dictionary<string, string>
