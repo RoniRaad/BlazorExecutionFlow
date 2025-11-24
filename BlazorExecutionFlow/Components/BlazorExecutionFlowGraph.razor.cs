@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using BlazorExecutionFlow.Helpers;
+using BlazorExecutionFlow.Models;
 using BlazorExecutionFlow.Models.DTOs;
 using BlazorExecutionFlow.Models.NodeV2;
 using Microsoft.AspNetCore.Components;
@@ -47,6 +48,15 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
     public double PosX { get; set; }
     public double PosY { get; set; }
+
+    // Undo/Redo system - snapshot-based
+    private readonly Stack<GraphSnapshot> _undoStack = new();
+    private readonly Stack<GraphSnapshot> _redoStack = new();
+    private bool _isPerformingUndoRedo = false;
+    private System.Threading.Timer? _snapshotTimer;
+    private bool _pendingSnapshot = false;
+    private readonly object _snapshotLock = new();
+    private string? _lastSnapshotJson = null; // Track last snapshot to avoid duplicates
 
     private static JsonSerializerOptions jsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -93,7 +103,29 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
             await OnAsync("connectionCreated");
             await OnAsync("connectionRemoved");
             await OnAsync("nodeRemoved");
+
+            // Setup keyboard listener for undo/redo
+            await JS.InvokeVoidAsync("setupUndoRedoKeyboard", _selfRef, ElementId);
+
+            // Take initial snapshot after graph is fully loaded
+            // This gives us a baseline state to return to
+            await Task.Delay(100); // Small delay to ensure everything is settled
+            TakeSnapshot();
         }
+    }
+
+    [JSInvokable]
+    public async Task OnUndoRequested()
+    {
+        Console.WriteLine($"[Undo] Undo requested. Stack size: {_undoStack.Count}");
+        await UndoAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnRedoRequested()
+    {
+        Console.WriteLine($"[Redo] Redo requested. Stack size: {_redoStack.Count}");
+        await RedoAsync();
     }
 
     [JSInvokable]
@@ -188,6 +220,9 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                     if (nodeData.TryGetProperty("pos_y", out var posYProp))
                         node.PosY = posYProp.GetDouble();
                 }
+
+                // Schedule a snapshot after a short delay (debounced)
+                ScheduleSnapshot();
             }
             catch (Exception ex)
             {
@@ -226,6 +261,9 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
         if (Graph.Nodes.TryGetValue(outputId, out var sourceNode) &&
             Graph.Nodes.TryGetValue(inputId, out var targetNode))
         {
+            // Take snapshot BEFORE making the change so we can undo back to this state
+            TakeSnapshot();
+
             // Determine output port name from output_class (e.g., "output_1" -> first port)
             var outputPortName = "default";
             if (sourceNode.DeclaredOutputPorts is { Count: > 0 } ports)
@@ -283,6 +321,9 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
         if (Graph.Nodes.TryGetValue(outputId, out var sourceNode) &&
             Graph.Nodes.TryGetValue(inputId, out var targetNode))
         {
+            // Take snapshot BEFORE making the change so we can undo back to this state
+            TakeSnapshot();
+
             // Determine output port name from output_class (e.g., "output_1" -> first port)
             var outputPortName = "default";
             if (sourceNode.DeclaredOutputPorts is { Count: > 0 } ports)
@@ -342,6 +383,9 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
         if (Graph.Nodes.TryGetValue(nodeId, out var removedNode))
         {
+            // Take snapshot BEFORE removing the node
+            TakeSnapshot();
+
             // Remove all connections to/from this node
             foreach (var otherNode in Graph.Nodes.Values)
             {
@@ -522,14 +566,244 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
         return internalGraph;
     }
 
+    // ==========================================
+    // UNDO/REDO SYSTEM (Snapshot-based)
+    // ==========================================
+
+    /// <summary>
+    /// Schedule a snapshot after a short delay (debounced).
+    /// Used for operations like node moves that fire multiple events.
+    /// </summary>
+    private void ScheduleSnapshot()
+    {
+        if (_isPerformingUndoRedo)
+        {
+            return;
+        }
+
+        lock (_snapshotLock)
+        {
+            _pendingSnapshot = true;
+
+            // Dispose old timer if exists
+            _snapshotTimer?.Dispose();
+
+            // Create new timer that fires after 500ms (increased for better debouncing)
+            _snapshotTimer = new System.Threading.Timer(_ =>
+            {
+                lock (_snapshotLock)
+                {
+                    if (_pendingSnapshot)
+                    {
+                        // Use InvokeAsync to ensure we're on the UI thread
+                        _ = InvokeAsync(() =>
+                        {
+                            TakeSnapshot();
+                        });
+                        _pendingSnapshot = false;
+                    }
+                }
+            }, null, 500, Timeout.Infinite);
+        }
+    }
+
+    /// <summary>
+    /// Take an immediate snapshot of the current graph state.
+    /// </summary>
+    private void TakeSnapshot()
+    {
+        if (_isPerformingUndoRedo)
+        {
+            return;
+        }
+
+        try
+        {
+            // Ensure we have nodes to snapshot
+            if (Graph.Nodes.Count == 0)
+            {
+                Console.WriteLine("[Snapshot] Skipping snapshot - graph is empty");
+                return;
+            }
+
+            var snapshot = GraphSnapshot.Create(Graph, PosX, PosY);
+
+            // Avoid taking duplicate snapshots (same state captured twice)
+            if (_lastSnapshotJson != null && _lastSnapshotJson == snapshot.DrawflowJson)
+            {
+                Console.WriteLine("[Snapshot] Skipping duplicate snapshot");
+                return;
+            }
+
+            _lastSnapshotJson = snapshot.DrawflowJson;
+            _undoStack.Push(snapshot);
+            _redoStack.Clear(); // Clear redo stack when a new snapshot is taken
+            Console.WriteLine($"[Snapshot] Captured graph state with {Graph.Nodes.Count} nodes. Undo stack size: {_undoStack.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Snapshot] Error taking snapshot: {ex.Message}");
+            Console.WriteLine($"[Snapshot] Stack trace: {ex.StackTrace}");
+        }
+    }
+
+    /// <summary>
+    /// Undo to the last snapshot.
+    /// </summary>
+    public async Task UndoAsync()
+    {
+        if (_undoStack.Count == 0)
+        {
+            Console.WriteLine("[Undo] Nothing to undo");
+            return;
+        }
+
+        _isPerformingUndoRedo = true;
+        try
+        {
+            // Save current state to redo stack
+            var currentSnapshot = GraphSnapshot.Create(Graph, PosX, PosY);
+
+            // Pop and restore previous state
+            var previousSnapshot = _undoStack.Pop();
+            await RestoreSnapshotAsync(previousSnapshot);
+
+            // Push current state to redo stack
+            _redoStack.Push(currentSnapshot);
+
+            Console.WriteLine($"[Undo] Restored previous state. Undo stack size: {_undoStack.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Undo] Error during undo: {ex.Message}");
+        }
+        finally
+        {
+            _isPerformingUndoRedo = false;
+        }
+    }
+
+    /// <summary>
+    /// Redo the last undone snapshot.
+    /// </summary>
+    public async Task RedoAsync()
+    {
+        if (_redoStack.Count == 0)
+        {
+            Console.WriteLine("[Redo] Nothing to redo");
+            return;
+        }
+
+        _isPerformingUndoRedo = true;
+        try
+        {
+            // Save current state to undo stack
+            var currentSnapshot = GraphSnapshot.Create(Graph, PosX, PosY);
+
+            // Pop and restore next state
+            var nextSnapshot = _redoStack.Pop();
+            await RestoreSnapshotAsync(nextSnapshot);
+
+            // Push current state to undo stack
+            _undoStack.Push(currentSnapshot);
+
+            Console.WriteLine($"[Redo] Restored next state. Redo stack size: {_redoStack.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Redo] Error during redo: {ex.Message}");
+        }
+        finally
+        {
+            _isPerformingUndoRedo = false;
+        }
+    }
+
+    /// <summary>
+    /// Restore graph state from a snapshot.
+    /// </summary>
+    private async Task RestoreSnapshotAsync(GraphSnapshot snapshot)
+    {
+        if (Editor == null)
+        {
+            throw new InvalidOperationException("Editor is not initialized");
+        }
+
+        try
+        {
+            Console.WriteLine($"[RestoreSnapshot] Starting restore...");
+
+            // Clear the Drawflow editor
+            await Editor.ClearAsync();
+
+            // Import the Drawflow JSON from the snapshot
+            await Editor.ImportAsync(snapshot.DrawflowJson);
+
+            // Wait for next frame to ensure DOM is ready
+            await JS.InvokeVoidAsync("nextFrame");
+
+            // Parse the Drawflow JSON to regenerate the Graph object
+            var drawflowGraph = DrawflowGraph.Parse(this, snapshot.DrawflowJson);
+            Graph = GenerateGraphV2(drawflowGraph);
+
+            // Restore canvas position
+            PosX = snapshot.CanvasPosX;
+            PosY = snapshot.CanvasPosY;
+
+            // Update the last snapshot to match what we just restored
+            // This prevents the restore from triggering a new snapshot
+            _lastSnapshotJson = snapshot.DrawflowJson;
+
+            // Re-apply port labels for nodes with multiple outputs
+            foreach (var node in Graph.Nodes.Select(x => x.Value))
+            {
+                if (node.DeclaredOutputPorts.Count > 0)
+                {
+                    await JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", Id, node.DrawflowNodeId,
+                        new List<List<string>>(),
+                        node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
+                }
+            }
+
+            // Update connection positions
+            await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id);
+
+            Console.WriteLine($"[RestoreSnapshot] Successfully restored graph with {Graph.Nodes.Count} nodes");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[RestoreSnapshot] Error restoring snapshot: {ex.Message}");
+            Console.WriteLine($"[RestoreSnapshot] Stack trace: {ex.StackTrace}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Clear undo/redo history.
+    /// </summary>
+    public void ClearHistory()
+    {
+        _undoStack.Clear();
+        _redoStack.Clear();
+        _snapshotTimer?.Dispose();
+        _snapshotTimer = null;
+        _pendingSnapshot = false;
+        _lastSnapshotJson = null;
+        Console.WriteLine("[ClearHistory] Cleared all undo/redo history");
+    }
+
     /// <summary>Destroy the editor instance.</summary>
     public async ValueTask DisposeAsync()
     {
         try
         {
+            // Dispose snapshot timer
+            _snapshotTimer?.Dispose();
+
             if (JS is not null && _created)
             {
                  await JS.InvokeVoidAsync("DrawflowBlazor.destroy", ElementId);
+                 await JS.InvokeVoidAsync("removeUndoRedoKeyboard", ElementId);
             }
         }
         catch { /* ignore */ }
