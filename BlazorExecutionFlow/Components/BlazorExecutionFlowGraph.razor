@@ -13,6 +13,7 @@
 @using BlazorExecutionFlow.Models
 @using BlazorExecutionFlow.Models.NodeV2
 @using System.Text.Json
+@using System.Collections.Frozen
 @using static BlazorExecutionFlow.Helpers.DrawflowHelpers
 @inherits BlazorExecutionFlowGraphBase
 
@@ -207,6 +208,7 @@
     [Parameter] public EventCallback<string> OnNodeDoubleClicked { get; set; }
     [Parameter] public bool IncludeControlPanel { get; set; } = true;
     [Parameter] public bool EnableStatusAnimations { get; set; } = true;
+    [Parameter] public Dictionary<string, string> WorkflowParameters { get; set; } = new();
 
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private BlazorExecutionFlowGraphBase? _base;
@@ -692,25 +694,10 @@
 
     private async Task Run()
     {
-        // Clear results and errors from previous runs
-        foreach (var node in Graph.Nodes)
+        _ = Graph.Run(new()
         {
-            node.Value.Result = null;
-            node.Value.HasError = false;
-            node.Value.ErrorMessage = null;
-        }
-
-        // Event handlers are already attached during component initialization
-        // No need to re-attach them here
-
-        var startNodes = Graph.Nodes.Where(x => x.Value.BackingMethod.Name == nameof(BaseNodeCollection.Start));
-        var tasks = new List<Task>();
-        foreach (var startNode in startNodes)
-        {
-            tasks.Add(startNode.Value.ExecuteNode());
-        }
-
-        await Task.WhenAll(tasks);
+            Parameters = WorkflowParameters.ToFrozenDictionary()
+        });
     }
 
     private async Task CreateNode(Node nodeTemplate)

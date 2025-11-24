@@ -40,7 +40,8 @@
                 <BlazorExecutionFlowGraph Id="@($"BlazorExecutionFlow-{WorkflowId}")"
                                           Style="height:100vh;"
                                           Options="@options"
-                                          Graph="_graph" />
+                                          Graph="_graph"
+                                          WorkflowParameters="_workflowInfo.Inputs"/>
             }
         </div>
     </div>
@@ -52,6 +53,7 @@
 
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private Graph? _graph;
+	private WorkflowInfo? _workflowInfo;
     private bool _isLoaded = false;
 
     protected override void OnInitialized()
@@ -63,6 +65,7 @@
             try
             {
                 _graph = workflow.FlowGraph;
+				_workflowInfo = workflow;
             }
             catch (Exception ex)
             {

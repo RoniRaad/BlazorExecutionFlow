@@ -59,11 +59,11 @@ public class WorkflowService
             Description = "Fetches data from an API, processes it, and stores results",
             CreatedAt = DateTime.Now.AddDays(-10),
             ModifiedAt = DateTime.Now.AddDays(-2),
-            Inputs = new Dictionary<string, object>
+            Inputs = new Dictionary<string, string>
             {
                 ["apiUrl"] = "https://api.example.com/data",
-                ["maxRetries"] = 3,
-                ["timeout"] = 30000
+                ["maxRetries"] = "3",
+                ["timeout"] = "30000"
             },
             PreviousExecutions = new List<WorkflowExecution>
             {
@@ -99,10 +99,10 @@ public class WorkflowService
             Description = "Sends personalized emails to subscribers based on their preferences",
             CreatedAt = DateTime.Now.AddDays(-5),
             ModifiedAt = DateTime.Now.AddDays(-1),
-            Inputs = new Dictionary<string, object>
+            Inputs = new Dictionary<string, string>
             {
                 ["campaignId"] = "camp-2024-01",
-                ["batchSize"] = 100
+                ["batchSize"] = "100"
             },
             PreviousExecutions = new List<WorkflowExecution>
             {
@@ -130,10 +130,10 @@ public class WorkflowService
             Description = "Generates weekly analytics reports and uploads to cloud storage",
             CreatedAt = DateTime.Now.AddDays(-15),
             ModifiedAt = DateTime.Now.AddDays(-15),
-            Inputs = new Dictionary<string, object>
+            Inputs = new Dictionary<string, string>
             {
                 ["reportType"] = "weekly",
-                ["includeCharts"] = true
+                ["includeCharts"] = "true"
             },
             FlowGraph = new()
         };

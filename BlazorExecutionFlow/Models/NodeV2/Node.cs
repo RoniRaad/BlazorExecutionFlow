@@ -43,7 +43,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public string DrawflowNodeId { get; set; } = string.Empty;
         public double PosX { get; set; }
         public double PosY { get; set; }
-
+        public GraphExecutionContext? SharedExecutionContext { get; set; }
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [];
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [];
 
@@ -71,12 +71,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
         [JsonIgnore]
         public Dictionary<string, List<Node>> OutputPorts { get; } =
             new(StringComparer.OrdinalIgnoreCase);
-
-        /// <summary>
-        /// Shared execution context containing workflow inputs and global state.
-        /// Set this before executing the workflow to provide inputs to GetInput nodes.
-        /// </summary>
-        [JsonIgnore] public Dictionary<string, object?>? SharedExecutionContext { get; set; }
 
         [JsonIgnore] private bool _portsInitialized;
         [JsonIgnore] private bool _isPortDriven;
@@ -229,11 +223,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
             {
                 foreach (var outputNode in OutputNodes)
                 {
-                    // Propagate shared execution context to downstream nodes
-                    if (SharedExecutionContext != null && outputNode.SharedExecutionContext == null)
-                    {
-                        outputNode.SharedExecutionContext = SharedExecutionContext;
-                    }
                     await outputNode.ExecuteNode(this);
                 }
             }
@@ -277,6 +266,15 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
                 Result = await InvokeBackingMethod(filledMethodParameters);
+
+                var outputResults = Result.GetByPath("workflow.output")?.AsObject();
+                foreach (var item in outputResults ?? [])
+                {
+                    if (SharedExecutionContext == null || item.Value == null)
+                        continue;
+
+                    SharedExecutionContext.Output[item.Key] = item.Value; 
+                }
 
                 if (MergeOutputWithInput)
                 {
@@ -542,13 +540,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 {
                     // Create context dictionary, merging shared execution context if available
                     var contextDict = new Dictionary<string, object?>();
-                    if (SharedExecutionContext != null)
-                    {
-                        foreach (var kvp in SharedExecutionContext)
-                        {
-                            contextDict[kvp.Key] = kvp.Value;
-                        }
-                    }
 
                     orderedMethodParameters[i] = new NodeContext
                     {
@@ -628,6 +619,11 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 }
 
                 // Fall back to template rendering for complex expressions
+                if (SharedExecutionContext is not null)
+                {
+                    inputPayload.SetByPath("workflow.parameters", SharedExecutionContext.Parameters);
+                }
+
                 var modelDict = inputPayload.ToPlainObject()!;
 
                 var scriptObject = new ScriptObject();
@@ -639,7 +635,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 if (parameter.ParameterType == typeof(string) &&
                     value is not null &&
                     !value.StartsWith("\"") &&
-                    !value.EndsWith("\""))
+                    !value.EndsWith("\"") &&
+                    !value.Contains("{{"))
                 {
                     value = $"\"{value}\"";
                 }
