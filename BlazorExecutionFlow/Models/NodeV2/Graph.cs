@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using BlazorExecutionFlow.Flow.BaseNodes;
@@ -50,7 +51,10 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public JsonObject SharedContext { 
             get 
             {
-                _sharedContext.TryAdd("workflow.parameters", JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Parameters))!);
+                var parametersObj = new JsonObject();
+                _sharedContext.TryAdd("workflow", parametersObj);
+                parametersObj.TryAdd("parameters", JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Parameters))!);
+
                 return _sharedContext;
             }
         }

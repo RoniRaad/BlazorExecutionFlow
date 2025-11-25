@@ -144,22 +144,22 @@ role="dialog"
                                                 }
                                             </label>
                                             <div class="input-with-preview">
-                                                <input @bind="inputMapping.From"
-                                                       @bind:event="oninput"
-                                                       type="text"
-                                                       class="form-control form-control-sm droppable-input"
-                                                       placeholder="e.g. input.name or {{input.name}}"
-                                                       aria-label="Scriban template for @inputMapping.To"
-                                                       @ondragover="@((e) => HandleDragOver(e))"
-                                                       @ondragover:preventDefault="true"
-                                                       @ondrop="@((e) => HandleDrop(e, inputMapping))"
-                                                       style="padding-right: 3px"
-                                                       required
-                                                       data-role="payload-path" />
-                                                <div class="preview-button-container">
+                                                <textarea @bind="inputMapping.From"
+                                                          @bind:event="oninput"
+                                                          class="form-control form-control-sm droppable-input mapping-input"
+                                                          placeholder="e.g. input.name or {{input.name}}"
+                                                          aria-label="Scriban template for @inputMapping.To"
+                                                          @ondragover="@((e) => HandleDragOver(e))"
+                                                          @ondragover:preventDefault="true"
+                                                          @ondrop="@((e) => HandleDrop(e, inputMapping))"
+                                                          style="padding-right: 15px"
+                                                          rows="1"
+                                                          required
+                                                          data-role="payload-path"></textarea>
+                                                <div class="preview-button-container" style="top: -5px;position: absolute;right: -9px;">
                                                     <button type="button"
                                                             class="btn-preview"
-                                                            style="background-color: transparent;border: transparent;color: black;right: -5px;top: -4px;"
+                                                            style="background-color: transparent;border: transparent;color: white;"
                                                             @ref="_previewButtonRef"
                                                             @onclick="@(() => TogglePreview(inputMapping))"
                                                             title="Toggle preview">
@@ -274,15 +274,24 @@ role="dialog"
                                                 var hasProperty = !string.IsNullOrEmpty(propInfo.Name);
                                                 var typeDisplay = hasProperty ? propInfo.Type : TypeHelpers.FormatTypeName(BackingNode.BackingMethod.ReturnType);
                                                 <div class="simple-mapping-item" data-role="output-mapping-row">
-                                                    <label class="simple-mapping-label" title="@typeDisplay">
-                                                        @outputMapping.From
-                                                        <span class="param-type-hint">(@typeDisplay)</span>
-                                                    </label>
-                                                    <InputText @bind-Value="outputMapping.To" type="text"
-                                                               class="form-control form-control-sm"
-                                                               placeholder="e.g. output.name"
-                                                               required
-                                                               data-role="target-payload-path" />
+                                                    <div class="simple-mapping-label-row">
+                                                        <label class="simple-mapping-label" title="@typeDisplay">
+                                                            @outputMapping.From
+                                                            <span class="param-type-hint">(@typeDisplay)</span>
+                                                        </label>
+                                                        <label class="workflow-output-checkbox-label" title="Expose this output to workflow.output.*">
+                                                            <InputCheckbox @bind-Value="outputMapping.ExposeAsWorkflowOutput"
+                                                                           class="workflow-output-checkbox"
+                                                                           data-role="expose-workflow-output" />
+                                                            <span class="workflow-output-checkbox-text">Workflow output</span>
+                                                        </label>
+                                                    </div>
+                                                    <InputTextArea @bind-Value="outputMapping.To"
+                                                                   class="form-control form-control-sm mapping-input"
+                                                                   placeholder="e.g. output.name"
+                                                                   required
+                                                                   rows="1"
+                                                                   data-role="target-payload-path" />
                                                 </div>
                                             }
                                         }

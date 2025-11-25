@@ -295,6 +295,76 @@
     font-weight: 400;
 }
 
+/* Mapping input styling */
+.mapping-input {
+    background-color: rgba(31, 41, 55, 0.5) !important;
+    border: 1px solid rgba(75, 85, 99, 0.6) !important;
+    color: var(--color-text-primary) !important;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    min-height: 2.2rem;
+}
+
+.mapping-input:hover {
+    border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+.mapping-input:focus {
+    background-color: rgba(31, 41, 55, 0.7) !important;
+    border-color: var(--color-info) !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Textarea-specific styling for auto-growing */
+textarea.mapping-input {
+    resize: vertical;
+    min-height: 2.2rem;
+    max-height: 10rem;
+    font-family: inherit;
+    overflow-y: auto;
+    padding-right: 15px;
+}
+
+/* Row for label and checkbox on same line */
+.simple-mapping-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Workflow output checkbox */
+.workflow-output-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin: 0;
+    cursor: pointer;
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+    transition: color var(--transition-fast);
+    white-space: nowrap;
+}
+
+.workflow-output-checkbox-label:hover {
+    color: var(--color-text-primary);
+}
+
+.workflow-output-checkbox {
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+    accent-color: var(--color-info);
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.workflow-output-checkbox-text {
+    user-select: none;
+}
+
 /* JSON preview controls */
 .json-controls {
     display: flex;

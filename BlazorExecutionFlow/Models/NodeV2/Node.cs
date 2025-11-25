@@ -461,6 +461,12 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 {
                     var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
                     resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
+
+                    // Also expose to workflow.output.* if flagged
+                    if (methodOutputMap.ExposeAsWorkflowOutput)
+                    {
+                        resultObject.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputValue?.DeepClone());
+                    }
                 }
             }
             else
@@ -507,6 +513,12 @@ namespace BlazorExecutionFlow.Models.NodeV2
                         // For single-value types, the mapping is typically "result" -> "result"
                         // Just map the whole serialized response
                         resultObject.SetByPath($"output.{methodOutputMap.To}", serializedResponse);
+
+                        // Also expose to workflow.output.* if flagged
+                        if (methodOutputMap.ExposeAsWorkflowOutput)
+                        {
+                            resultObject.SetByPath($"workflow.output.{methodOutputMap.To}", serializedResponse?.DeepClone());
+                        }
                     }
                 }
                 else
@@ -515,6 +527,12 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
                     {
                         resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputJsonObject);
+
+                        // Also expose to workflow.output.* if flagged
+                        if (methodOutputMap.ExposeAsWorkflowOutput)
+                        {
+                            resultObject.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputJsonObject?.DeepClone());
+                        }
                     }
                 }
             }
@@ -624,5 +642,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
     {
         public string From { get; set; } = string.Empty;
         public string To { get; set; } = string.Empty;
+        public bool ExposeAsWorkflowOutput { get; set; } = false;
     }
 }
