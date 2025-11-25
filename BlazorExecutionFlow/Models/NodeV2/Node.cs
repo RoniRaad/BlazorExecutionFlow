@@ -465,7 +465,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     // Also expose to workflow.output.* if flagged
                     if (methodOutputMap.ExposeAsWorkflowOutput)
                     {
-                        resultObject.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputValue?.DeepClone());
+                        SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputValue?.DeepClone());
                     }
                 }
             }
@@ -517,7 +517,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                         // Also expose to workflow.output.* if flagged
                         if (methodOutputMap.ExposeAsWorkflowOutput)
                         {
-                            resultObject.SetByPath($"workflow.output.{methodOutputMap.To}", serializedResponse?.DeepClone());
+                            SharedExecutionContext.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", serializedResponse?.DeepClone());
                         }
                     }
                 }
@@ -531,7 +531,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
                         // Also expose to workflow.output.* if flagged
                         if (methodOutputMap.ExposeAsWorkflowOutput)
                         {
-                            resultObject.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputJsonObject?.DeepClone());
+                            SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputJsonObject?.DeepClone());
                         }
                     }
                 }
