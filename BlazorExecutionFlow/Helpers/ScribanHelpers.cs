@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using BlazorExecutionFlow.Models.NodeV2;
 using Scriban;
 using Scriban.Runtime;
+using Scriban.Syntax;
 
 namespace BlazorExecutionFlow.Helpers
 {
@@ -247,6 +248,167 @@ namespace BlazorExecutionFlow.Helpers
             }
 
             return elements;
+        }
+
+        public static void GetWorkflowInputMappings(PathMapEntry entry, out string? parameterName)
+        {
+            parameterName = null;
+            if (!entry.From.StartsWith("workflow.parameters"))
+            {
+                return;
+            }
+            parameterName = entry.From["workflow.parameters".Length..].TrimStart('.');
+        }
+
+        public static WorkflowOutputMap? GetWorkflowOutputMappings(PathMapEntry entry)
+        {
+            if (!entry.To.StartsWith("workflow.output"))
+            {
+                return null;
+            }
+
+            var outputPath = entry.To["workflow.output".Length..].TrimStart('.');
+            return new WorkflowOutputMap
+            {
+                OutputPath = outputPath,
+                FromParameter = entry.From,
+            };
+        }
+
+        /// <summary>
+        /// Returns all distinct variable paths accessed under 'workflow.input'
+        /// from the given Scriban template.
+        ///
+        /// Example:
+        ///  template: "{{ workflow.input.name }} {{ workflow.input.address.city }}"
+        ///  result: [ "input.name", "input.address.city" ]
+        /// </summary>
+        public static IReadOnlyCollection<string> GetWorkflowInputVariables(string scribanTemplate)
+        {
+            if (scribanTemplate == null) throw new ArgumentNullException(nameof(scribanTemplate));
+
+            var parsed = Template.Parse(scribanTemplate);
+            if (parsed.HasErrors)
+            {
+                var errors = string.Join(Environment.NewLine, parsed.Messages.Select(m => m.ToString()));
+                throw new ArgumentException($"Template has errors:{Environment.NewLine}{errors}");
+            }
+
+            var visitor = new WorkflowInputVisitor();
+            visitor.Visit(parsed.Page);
+
+            visitor.Paths.RemoveWhere(p => string.Equals(p, "parameters", StringComparison.OrdinalIgnoreCase));
+
+            return visitor.Paths;
+        }
+
+        private sealed class WorkflowInputVisitor : ScriptVisitor
+        {
+            public HashSet<string> Paths { get; } =
+                new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            public override void Visit(ScriptMemberExpression node)
+            {
+                AddPathIfWorkflowInput(node);
+                base.Visit(node);
+            }
+
+            public override void Visit(ScriptIndexerExpression node)
+            {
+                AddPathIfWorkflowInput(node);
+                base.Visit(node);
+            }
+
+            private void AddPathIfWorkflowInput(ScriptNode node)
+            {
+                var path = TryBuildPath(node);
+                if (path != null)
+                {
+                    // path is "parameters.foo.bar" (starting at input)
+                    Paths.Add(path);
+                }
+            }
+
+            /// <summary>
+            /// Builds a dotted path for a chain like workflow.parameters.foo.bar or workflow.parameters.items[0].name
+            /// Returns "parameters.foo.bar" / "parameters.items[0].name" if it starts with workflow.input,
+            /// otherwise null.
+            /// </summary>
+            private static string? TryBuildPath(ScriptNode node)
+            {
+                var segments = new List<string>();
+                ScriptNode? current = node;
+
+                while (current != null)
+                {
+                    switch (current)
+                    {
+                        case ScriptMemberExpression member:
+                            {
+                                // Member is usually a ScriptVariable (e.g. "name", "address", "city")
+                                if (member.Member is ScriptVariable varMember)
+                                {
+                                    segments.Add(varMember.Name);
+                                }
+
+                                current = member.Target;
+                                break;
+                            }
+
+                        case ScriptIndexerExpression indexer:
+                            {
+                                // Handle things like workflow.input.items[0] or ["key"]
+                                if (indexer.Index is ScriptLiteral litIndex)
+                                {
+                                    // For numeric indexes we get [0], for strings ["key"]
+                                    segments.Add($"[{litIndex.Value}]");
+                                }
+                                else
+                                {
+                                    // Non-literal index (e.g. [i]) – just mark it generically
+                                    segments.Add("[*]");
+                                }
+
+                                current = indexer.Target;
+                                break;
+                            }
+
+                        case ScriptVariable scriptVar:
+                            {
+                                // Covers ScriptVariableGlobal, ScriptVariableLocal, etc.
+                                segments.Add(scriptVar.Name);
+                                current = null;
+                                break;
+                            }
+
+                        default:
+                            current = null;
+                            break;
+                    }
+                }
+
+                // Built from leaf to root, so reverse
+                segments.Reverse();
+
+                // Expect ["workflow", "parameters", ...]
+                if (segments.Count >= 2 &&
+                    string.Equals(segments[0], "workflow", StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(segments[1], "parameters", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Remove leading "workflow" and keep "parameters" + rest.
+                    // If you want to drop "parameters" too, change Skip(1) to Skip(2).
+                    var pathSegments = segments.Skip(1); // "parameters.foo.bar"
+                    return string.Join(".", pathSegments);
+                }
+
+                return null;
+            }
+        }
+
+        public class WorkflowOutputMap
+        {
+            public string OutputPath { get; set; } = string.Empty;
+            public string FromParameter { get; set; } = string.Empty;
         }
     }
 }

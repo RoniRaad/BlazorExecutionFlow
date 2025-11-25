@@ -2,11 +2,19 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using BlazorExecutionFlow.Flow.BaseNodes;
+using BlazorExecutionFlow.Helpers;
 namespace BlazorExecutionFlow.Models.NodeV2
 {
     public class Graph
     {
         public ConcurrentDictionary<string, Node> Nodes = [];
+
+        public Graph()
+        {
+            Nodes["0"] = DrawflowHelpers.CreateNodeFromMethod(typeof(CoreNodes).GetMethod("Start"));
+            Nodes["0"].DrawflowNodeId = "0";
+        }
+
         public async Task Run(GraphExecutionContext executionContext)
         {
             // Clear results and errors from previous runs

@@ -52,7 +52,6 @@
 .node-editor-dialog {
     width: 90%;
     max-width: 1660px;
-    width: 100%;
     margin: 0 auto;
     height: 100vh;
     display: flex;

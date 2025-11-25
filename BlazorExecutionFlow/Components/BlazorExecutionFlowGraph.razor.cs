@@ -763,6 +763,8 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
                         new List<List<string>>(),
                         node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
                 }
+
+                await JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", Id, node.DrawflowNodeId);
             }
 
             // Update connection positions

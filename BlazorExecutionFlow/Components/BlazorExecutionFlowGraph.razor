@@ -479,10 +479,7 @@
 
         foreach (var node in Graph.Nodes)
         {
-            if (node.Value.DeclaredOutputPorts.Count > 0)
-            {
-                await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.Value.DrawflowNodeId, new List<List<string>>(), node.Value.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
-            }
+            await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.Value.DrawflowNodeId, new List<List<string>>(), node.Value.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
 
             // Set node width based on title
             await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.Value.DrawflowNodeId);
@@ -494,7 +491,10 @@
 
     private async Task ExecuteInputNodes()
     {
-        await Run();
+        await Graph.Run(new()
+        {
+            Parameters = WorkflowParameters.ToFrozenDictionary()
+        });
     }
 
     async Task SetStatusAsync(string nodeId, bool isRunning, bool hasError = false, string? errorMessage = null, int? outputPos = null, object? value = null)
@@ -744,10 +744,7 @@
             // Re-apply port labels for nodes with multiple outputs
             foreach (var node in nodes)
             {
-                if (node.DeclaredOutputPorts.Count > 0)
-                {
-                    await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
-                }
+                await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
 
                 // Set node width based on title
                 await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.DrawflowNodeId);
@@ -807,10 +804,7 @@
             // Re-apply port labels for nodes with multiple outputs
             foreach (var node in nodes)
             {
-                if (node.DeclaredOutputPorts.Count > 0)
-                {
-                    await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
-                }
+                await _base.JS.InvokeVoidAsync("DrawflowBlazor.labelPorts", _base.Id, node.DrawflowNodeId, new List<List<string>>(), node.DeclaredOutputPorts.Select(x => new List<string>() { x, "" }));
 
                 // Set node width based on title
                 await _base.JS.InvokeVoidAsync("DrawflowBlazor.setNodeWidthFromTitle", _base.Id, node.DrawflowNodeId);
