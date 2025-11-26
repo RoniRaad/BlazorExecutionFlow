@@ -30,6 +30,16 @@
                 </button>
             </div>
 
+            <div class="environment-selector-compact">
+                <label>Environment</label>
+                <select class="environment-dropdown" @onchange="HandleEnvironmentChange">
+                    @foreach (var env in Environments)
+                    {
+                        <option value="@env" selected="@(env == SelectedEnvironment)">@env</option>
+                    }
+                </select>
+            </div>
+
         <div class="sidebar-search">
             <input type="text" placeholder="Search workflows..." @bind="searchQuery" @bind:event="oninput" />
             <i class="bi bi-search"></i>
@@ -175,6 +185,7 @@
                                         }
                                     </div>
                                     <input type="text"
+                                           style="margin-left: 10px;"
                                            value="@displayValue"
                                            @oninput="@(e => HandleInputValueChange(inputName, e.Value?.ToString() ?? string.Empty))"
                                            placeholder="@(hasValue ? "" : "Enter value...")" />
@@ -448,18 +459,15 @@
         {
             foreach (var node in SelectedWorkflow.FlowGraph.Nodes.Values)
             {
-                if (node.BackingMethod?.Name == "GetInput")
-                {
-                    var inputNameMapping = node.NodeInputToMethodInputMap
-                        .FirstOrDefault(m => m.To == "inputName");
+                var inputNameMappings = node.NodeInputToMethodInputMap
+                    .Where(m => m.From.Contains($"workflow.parameters.{oldName}"));
 
-                    if (inputNameMapping != null && inputNameMapping.From.Trim().Trim('"') == oldName)
-                    {
-                        // Update the mapping to use the new name
-                        inputNameMapping.From = newName;
-                        break;
-                    }
-                }
+                inputNameMappings
+                .ToList()
+                .ForEach(mapping =>
+                {
+                    mapping.From = mapping.From.Replace($"workflow.parameters.{oldName}", $"workflow.parameters.{newName}");
+                });
             }
         }
 

@@ -46,7 +46,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public string DrawflowNodeId { get; set; } = string.Empty;
         public double PosX { get; set; }
         public double PosY { get; set; }
-        public GraphExecutionContext? SharedExecutionContext { get; set; }
+        [JsonIgnore] public GraphExecutionContext? SharedExecutionContext { get; set; }
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [];
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [];
 

@@ -54,6 +54,12 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
     private readonly Stack<GraphSnapshot> _redoStack = new();
     private bool _isPerformingUndoRedo = false;
     private System.Threading.Timer? _snapshotTimer;
+
+    // Callback to close modal (set from .razor file)
+    protected Action? OnCloseModalAfterUndoRedo { get; set; }
+
+    // Callback to attach node event handlers (set from .razor file)
+    protected Action? OnAttachNodeEventHandlers { get; set; }
     private bool _pendingSnapshot = false;
     private readonly object _snapshotLock = new();
     private string? _lastSnapshotJson = null; // Track last snapshot to avoid duplicates
@@ -744,7 +750,13 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
             // Parse the Drawflow JSON to regenerate the Graph object
             var drawflowGraph = DrawflowGraph.Parse(this, snapshot.DrawflowJson);
-            Graph = GenerateGraphV2(drawflowGraph);
+            var newGraph = GenerateGraphV2(drawflowGraph);
+
+            Console.WriteLine($"[RestoreSnapshot] Old Graph had {Graph.Nodes.Count} nodes");
+            Console.WriteLine($"[RestoreSnapshot] New Graph has {newGraph.Nodes.Count} nodes");
+            Console.WriteLine($"[RestoreSnapshot] New Graph node IDs: {string.Join(", ", newGraph.Nodes.Keys)}");
+
+            Graph = newGraph;
 
             // Restore canvas position
             PosX = snapshot.CanvasPosX;
@@ -769,6 +781,14 @@ public partial class BlazorExecutionFlowGraphBase : ComponentBase, IAsyncDisposa
 
             // Update connection positions
             await JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", Id);
+
+            // Reattach event handlers to all nodes
+            // This is CRITICAL - without it, nodes won't respond to interactions
+            OnAttachNodeEventHandlers?.Invoke();
+            Console.WriteLine($"[RestoreSnapshot] Reattached event handlers to {Graph.Nodes.Count} nodes");
+
+            //Close any open modal to prevent "ghost node" issues
+            OnCloseModalAfterUndoRedo?.Invoke();
 
             Console.WriteLine($"[RestoreSnapshot] Successfully restored graph with {Graph.Nodes.Count} nodes");
         }

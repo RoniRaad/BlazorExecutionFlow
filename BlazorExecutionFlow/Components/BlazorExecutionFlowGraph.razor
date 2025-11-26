@@ -468,10 +468,19 @@
 
     private async Task SaveChanges()
     {
+        Console.WriteLine($"[SaveChanges] Saving node: {editNode?.BackingMethod.Name} (DrawflowId: {editNode?.DrawflowNodeId})");
+        Console.WriteLine($"[SaveChanges] Graph has {Graph.Nodes.Count} nodes");
+        Console.WriteLine($"[SaveChanges] editNode is in Graph: {Graph.Nodes.ContainsKey(editNode?.DrawflowNodeId ?? "")}");
+
         var currentUiNode = Graph.Nodes.First(x => x.Key == editNode.DrawflowNodeId);
+        Console.WriteLine($"[SaveChanges] Found currentUiNode: {currentUiNode.Value?.BackingMethod.Name}");
+        Console.WriteLine($"[SaveChanges] currentUiNode == editNode: {ReferenceEquals(currentUiNode.Value, editNode)}");
+
         editNode.PosX = currentUiNode.Value.PosX;
         editNode.PosY = currentUiNode.Value.PosY;
         Graph.Nodes[editNode.DrawflowNodeId] = editNode;
+        Console.WriteLine($"[SaveChanges] Updated Graph.Nodes[{editNode.DrawflowNodeId}]");
+
         var json = DrawflowExporter.ExportToDrawflowJson(Graph.Nodes.Select(x => x.Value));
         await _base.CallAsync("import", json);
 
@@ -696,17 +705,42 @@
 
     private async Task DoubleClickedNode(string nodeId)
     {
+        Console.WriteLine($"[DoubleClick] Looking for node with ID: {nodeId}");
         var node = Graph.Nodes.FirstOrDefault(x => x.Key == nodeId.ToString());
-        editNode = node.Value;
-        showModal = true;
+
+        if (node.Value != null)
+        {
+            Console.WriteLine($"[DoubleClick] Found node: {node.Value.BackingMethod.Name} (DrawflowId: {node.Value.DrawflowNodeId}, InternalId: {node.Value.Id})");
+            editNode = node.Value;
+            showModal = true;
+        }
+        else
+        {
+            Console.WriteLine($"[DoubleClick] ERROR: Node not found in Graph.Nodes!");
+            Console.WriteLine($"[DoubleClick] Available node IDs: {string.Join(", ", Graph.Nodes.Keys)}");
+        }
 
         await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseModalAfterUndoRedo()
+    {
+        Console.WriteLine("[CloseModal] Closing modal after undo/redo to prevent ghost node issues");
+        showModal = false;
+        editNode = null;
     }
 
     protected override void OnInitialized()
     {
         _nodes = DrawflowHelpers.GetNodesObjectsV2();
         _base = this;
+
+        // Set up callback to close modal after undo/redo
+        OnCloseModalAfterUndoRedo = CloseModalAfterUndoRedo;
+
+        // Set up callback to attach node event handlers after undo/redo
+        OnAttachNodeEventHandlers = AttachNodeEventHandlers;
+
         base.OnInitialized();
     }
 

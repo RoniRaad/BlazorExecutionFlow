@@ -144,6 +144,26 @@
     font-size: 0.875rem;
 }
 
+.environment-selector-compact {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.environment-selector-compact label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin: 0 0 0.5rem 0;
+    display: block;
+}
+
+.environment-selector-compact .environment-dropdown {
+    width: 100%;
+}
+
 .sidebar-search {
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);

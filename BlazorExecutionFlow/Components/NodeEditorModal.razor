@@ -40,7 +40,7 @@ role="dialog"
                 title="Execute Flow">
                     @if (isExecuting)
                     {
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span class="spinner-border" role="status" aria-hidden="true" style="width: 2.5rem; height: 2.5rem;"></span>
                     }
                     else
                     {
@@ -387,6 +387,7 @@ role="dialog"
     private ElementReference _previewButtonRef;
     private ElementReference _previewPopoverRef;
     private bool _errorDismissed = false;
+    private string? _lastErrorMessage = null;
 
     // JSON preview controls
     private string _jsonSearchTerm = "";
@@ -420,6 +421,18 @@ role="dialog"
 
         OutputPayloadJson = BackingNode?.Result;
         IncomingPayloadJson = BackingNode?.Input;
+
+        // Reset error dismissed state when a new error occurs
+        if (BackingNode?.HasError == true && BackingNode.ErrorMessage != _lastErrorMessage)
+        {
+            _errorDismissed = false;
+            _lastErrorMessage = BackingNode.ErrorMessage;
+        }
+        else if (BackingNode?.HasError == false)
+        {
+            // Clear tracking when there's no error
+            _lastErrorMessage = null;
+        }
     }
 
     /// <summary>
@@ -639,6 +652,18 @@ role="dialog"
             // Refresh the payload data after execution
             IncomingPayloadJson = BackingNode?.Input;
             OutputPayloadJson = BackingNode?.Result;
+
+            // Reset error dismissed state after execution if there's an error
+            if (BackingNode?.HasError == true)
+            {
+                _errorDismissed = false;
+                _lastErrorMessage = BackingNode.ErrorMessage;
+            }
+            else if (BackingNode?.HasError == false)
+            {
+                // Clear tracking when there's no error
+                _lastErrorMessage = null;
+            }
 
             StateHasChanged();
 
