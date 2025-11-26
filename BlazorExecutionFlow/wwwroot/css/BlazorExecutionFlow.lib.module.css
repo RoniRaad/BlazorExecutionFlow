@@ -1,4 +1,27 @@
 ﻿:root {
+    /* ===== Theme Variables for Library Components ===== */
+    /* These variables are scoped with --bef- prefix (BlazorExecutionFlow) */
+    /* Consumers can override these in their own CSS if needed */
+
+    --bef-primary-color: #6366f1;
+    --bef-primary-hover: #7c3aed;
+    --bef-primary-light: #818cf8;
+    --bef-secondary-color: #06b6d4;
+    --bef-background: #192138;
+    --bef-surface: #1f2937;
+    --bef-surface-elevated: #2d3748;
+    --bef-border-color: #374151;
+    --bef-text-primary: #f9fafb;
+    --bef-text-secondary: #9ca3af;
+    --bef-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --bef-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --bef-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --bef-radius: 8px;
+    --bef-radius-lg: 12px;
+
+    /* ===== Additional Design System Variables ===== */
+    /* These are used by the node editor modal and other UI elements */
+
     /* Spacing */
     --spacing-xs: 0.15rem;
     --spacing-sm: 0.45rem;
@@ -6,18 +29,18 @@
     --spacing-lg: 1.25rem;
     --spacing-xl: 2rem;
 
-    /* Colors - Background */
+    /* Colors - Background (legacy naming) */
     --color-bg-dark: #020617;
     --color-bg-panel: rgba(15, 23, 42, 0.9);
     --color-bg-gradient-start: #111827;
     --color-bg-gradient-end: #020617;
 
-    /* Colors - Border */
+    /* Colors - Border (legacy naming) */
     --color-border-light: rgba(148, 163, 184, 0.35);
     --color-border-medium: rgba(55, 65, 81, 0.9);
     --color-border-dark: rgba(31, 41, 55, 0.9);
 
-    /* Colors - Text */
+    /* Colors - Text (legacy naming) */
     --color-text-primary: #e5e7eb;
     --color-text-secondary: #9ca3af;
     --color-text-muted: #6b7280;
@@ -34,17 +57,17 @@
     --transition-normal: 0.3s ease-in-out;
     --transition-slow: 0.5s ease-in-out;
 
-    /* Border Radius */
+    /* Border Radius (legacy naming) */
     --radius-sm: 0.375rem;
     --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
+    --radius-lg-alt: 0.75rem;
     --radius-xl: 1rem;
     --radius-pill: 999px;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    /* Shadows (legacy naming) */
+    --shadow-sm-alt: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md-alt: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg-alt: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.85);
 }
 
