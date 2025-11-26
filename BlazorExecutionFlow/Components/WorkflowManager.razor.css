@@ -1,24 +1,27 @@
+/* WorkflowManager Scoped Styles */
+/* CSS Variables are provided by the BlazorExecutionFlow library with --bef- prefix */
+
 /* Workflow Manager - Dark Blue Theme */
 .workflow-manager {
     display: flex;
     height: 100%;
-    background: var(--background);
-    color: var(--text-primary);
+    background: var(--bef-background);
+    color: var(--bef-text-primary);
 }
 
 /* Sidebar */
 .workflow-sidebar {
     width: 350px;
-    background: var(--surface);
-    border-right: 1px solid var(--border-color);
+    background: var(--bef-surface);
+    border-right: 1px solid var(--bef-border-color);
     display: flex;
     flex-direction: column;
 }
 
 .sidebar-tabs {
     display: flex;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border-color);
+    background: var(--bef-surface);
+    border-bottom: 1px solid var(--bef-border-color);
 }
 
 .tab-button {
@@ -27,7 +30,7 @@
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -40,12 +43,12 @@
 
 .tab-button:hover {
     background: rgba(99, 102, 241, 0.05);
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
 }
 
 .tab-button.active {
-    color: var(--primary-color);
-    border-bottom-color: var(--primary-color);
+    color: var(--bef-primary-color);
+    border-bottom-color: var(--bef-primary-color);
     background: rgba(99, 102, 241, 0.1);
 }
 
@@ -61,7 +64,7 @@
 
 .environment-selector {
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--bef-border-color);
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -72,7 +75,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
 }
 
 .environment-controls {
@@ -85,9 +88,9 @@
     flex: 1;
     padding: 0.625rem 0.875rem;
     background: rgb(24, 32, 44);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--text-primary);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-text-primary);
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -95,21 +98,21 @@
 }
 
 .environment-dropdown:hover {
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
 }
 
 .environment-dropdown:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .btn-icon-secondary {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    border: 1px solid var(--bef-border-color);
+    color: var(--bef-text-secondary);
     padding: 0.5rem;
-    border-radius: var(--radius);
+    border-radius: var(--bef-radius);
     cursor: pointer;
     transition: all 0.15s ease;
     display: flex;
@@ -120,13 +123,13 @@
 
 .btn-icon-secondary:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--primary-color);
-    border-color: var(--primary-color);
+    color: var(--bef-primary-color);
+    border-color: var(--bef-primary-color);
 }
 
 .sidebar-header {
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--bef-border-color);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -136,17 +139,17 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
 }
 
 .sidebar-header small {
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     font-size: 0.875rem;
 }
 
 .environment-selector-compact {
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--bef-border-color);
     background: rgba(0, 0, 0, 0.1);
 }
 
@@ -155,7 +158,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     margin: 0 0 0.5rem 0;
     display: block;
 }
@@ -166,7 +169,7 @@
 
 .sidebar-search {
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--bef-border-color);
     position: relative;
 }
 
@@ -174,19 +177,19 @@
     width: 100%;
     padding: 0.75rem 3rem 0.75rem 1rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--text-primary);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-text-primary);
     font-size: 0.9rem;
 }
 
 .sidebar-search input::placeholder {
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
 }
 
 .sidebar-search input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
@@ -195,7 +198,7 @@
     right: 2.5rem;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
 }
 
 .workflow-list {
@@ -210,22 +213,22 @@
 .workflow-item {
     padding: 1rem;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .workflow-item:hover {
     background: rgba(99, 102, 241, 0.1);
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     transform: translateX(4px);
 }
 
 .workflow-item.selected {
     background: rgba(99, 102, 241, 0.15);
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-md);
+    border-color: var(--bef-primary-color);
+    box-shadow: var(--bef-shadow-md);
 }
 
 .workflow-item-header {
@@ -239,17 +242,17 @@
     font-size: 0.95rem;
     font-weight: 600;
     margin: 0;
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
 }
 
 .workflow-item-header small {
     font-size: 0.75rem;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
 }
 
 .workflow-desc {
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     margin: 0 0 0.75rem;
     line-height: 1.4;
 }
@@ -275,7 +278,7 @@
     align-items: center;
     justify-content: center;
     padding: 3rem 1rem;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     text-align: center;
 }
 
@@ -299,8 +302,8 @@
 
 .detail-header {
     padding: 2rem;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--bef-border-color);
+    background: var(--bef-surface-elevated);
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -310,12 +313,12 @@
     font-size: 2rem;
     font-weight: 700;
     margin: 0 0 0.5rem;
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
 }
 
 .detail-header p {
     margin: 0;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
 }
 
 /* Workflow Name Editing */
@@ -333,9 +336,9 @@
 .btn-icon-edit {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid transparent;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     padding: 0.5rem;
-    border-radius: var(--radius);
+    border-radius: var(--bef-radius);
     cursor: pointer;
     transition: all 0.15s ease;
     display: flex;
@@ -347,7 +350,7 @@
 
 .btn-icon-edit:hover {
     background: rgba(99, 102, 241, 0.1);
-    color: var(--primary-color);
+    color: var(--bef-primary-color);
     border-color: rgba(99, 102, 241, 0.3);
     opacity: 1;
 }
@@ -357,21 +360,21 @@
     font-weight: 700;
     padding: 0.5rem 0.75rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--text-primary);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-text-primary);
     transition: all 0.15s ease;
     width: 100%;
     max-width: 600px;
 }
 
 .workflow-name-input:hover {
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
 }
 
 .workflow-name-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
@@ -386,21 +389,21 @@
     font-weight: 700;
     padding: 0.5rem 0.75rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--text-primary);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-text-primary);
     transition: all 0.15s ease;
     width: fit-content;
     min-width: 300px;
 }
 
 .environment-name-input:hover {
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
 }
 
 .environment-name-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
@@ -411,11 +414,11 @@
 
 .detail-meta {
     padding: 1rem 2rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--bef-border-color);
     display: flex;
     gap: 2rem;
     font-size: 0.875rem;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
 }
 
 .detail-meta span {
@@ -434,11 +437,11 @@
 }
 
 .detail-section {
-    background: var(--surface);
-    border: 1px solid var(--border-color);
+    background: var(--bef-surface);
+    border: 1px solid var(--bef-border-color);
     border-radius: var(--radius-lg);
     padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--bef-shadow-sm);
 }
 
 .section-header {
@@ -452,7 +455,7 @@
     font-size: 1.125rem;
     font-weight: 600;
     margin: 0;
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
 }
 
 .section-content {
@@ -475,7 +478,7 @@
 }
 
 .param-key strong {
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
     font-size: 0.875rem;
     flex-shrink: 0;
 }
@@ -484,15 +487,15 @@
     width: 100%;
     padding: 0.5rem 0.75rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--text-primary);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-text-primary);
     font-size: 0.875rem;
 }
 
 .param-row input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
@@ -502,7 +505,7 @@
 }
 
 .param-row.input-unused .param-key strong {
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
 }
 
 .param-row.input-unused input {
@@ -516,27 +519,27 @@
     min-width: 120px;
     padding: 0.375rem 0.625rem;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--primary-color);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-primary-color);
     font-size: 0.875rem;
     font-weight: 600;
     transition: all 0.15s ease;
 }
 
 .input-name-input:hover {
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     background: rgba(0, 0, 0, 0.4);
 }
 
 .input-name-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .param-row.input-unused .input-name-input {
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     opacity: 0.8;
 }
 
@@ -552,13 +555,13 @@
 
 .input-badge.required {
     background: rgba(99, 102, 241, 0.15);
-    color: var(--primary-color);
+    color: var(--bef-primary-color);
     border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .input-badge.unused {
     background: rgba(100, 116, 139, 0.15);
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     border: 1px solid rgba(100, 116, 139, 0.3);
 }
 
@@ -575,7 +578,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     font-weight: 600;
 }
 
@@ -597,9 +600,9 @@
     flex: 1;
     padding: 0.5rem 0.75rem;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--primary-color);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-primary-color);
     font-size: 0.875rem;
     font-weight: 500;
     font-family: monospace;
@@ -607,7 +610,7 @@
 
 .env-var-key-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
@@ -615,23 +618,23 @@
     width: 100%;
     padding: 0.5rem 0.75rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--text-primary);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef-text-primary);
     font-size: 0.875rem;
 }
 
 .env-var-value-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .execution-item {
     padding: 1rem;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
 }
 
 .execution-item.success {
@@ -661,12 +664,12 @@
 }
 
 .execution-header strong {
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
     font-size: 0.875rem;
 }
 
 .execution-header small {
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     font-size: 0.75rem;
 }
 
@@ -679,7 +682,7 @@
     padding: 0.75rem;
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: var(--radius);
+    border-radius: var(--bef-radius);
     font-size: 0.875rem;
     color: #fca5a5;
     font-family: monospace;
@@ -687,7 +690,7 @@
 
 .execution-output summary {
     font-size: 0.85rem;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     cursor: pointer;
     padding: 0.5rem 0;
     margin-top: 0.75rem;
@@ -697,8 +700,8 @@
     margin-top: 0.5rem;
     padding: 0.75rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
     font-size: 0.85rem;
     display: flex;
     flex-direction: column;
@@ -706,16 +709,16 @@
 }
 
 .output-content strong {
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
 }
 
 .output-content code {
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
 }
 
 .empty-message {
     text-align: center;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     padding: 2rem;
     margin: 0;
 }
@@ -726,7 +729,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: var(--text-secondary);
+    color: var(--bef-text-secondary);
     text-align: center;
 }
 
@@ -749,7 +752,7 @@
 /* Buttons */
 .btn-primary-custom, .btn-success-custom, .btn-danger-custom, .btn-secondary-custom {
     padding: 0.5rem 1rem;
-    border-radius: var(--radius);
+    border-radius: var(--bef-radius);
     border: none;
     font-size: 0.875rem;
     font-weight: 500;
@@ -761,13 +764,13 @@
 }
 
 .btn-primary-custom {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    background: linear-gradient(135deg, var(--bef-primary-color), var(--primary-hover));
     color: white;
 }
 
 .btn-primary-custom:hover {
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--bef-shadow-md);
 }
 
 .btn-success-custom {
@@ -777,7 +780,7 @@
 
 .btn-success-custom:hover {
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--bef-shadow-md);
 }
 
 .btn-danger-custom {
@@ -792,13 +795,13 @@
 
 .btn-secondary-custom {
     background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
+    color: var(--bef-text-secondary);
+    border: 1px solid var(--bef-border-color);
 }
 
 .btn-secondary-custom:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    color: var(--bef-text-primary);
 }
 
 .btn-icon-danger {
@@ -820,6 +823,6 @@
     font-size: 0.75rem;
     padding: 0.25rem 0.625rem;
     background: rgba(99, 102, 241, 0.15);
-    color: var(--primary-color);
+    color: var(--bef-primary-color);
     border-radius: 999px;
 }
