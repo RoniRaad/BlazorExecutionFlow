@@ -48,12 +48,17 @@ namespace BlazorExecutionFlow.Models.NodeV2
     {
         private JsonObject _sharedContext = new JsonObject();
         public FrozenDictionary<string, string> Parameters { get; set; } = new Dictionary<string, string>().ToFrozenDictionary();
-        public JsonObject SharedContext { 
-            get 
+        public FrozenDictionary<string, string> EnvironmentVariables { get; set; } = new Dictionary<string, string>().ToFrozenDictionary();
+        public JsonObject SharedContext {
+            get
             {
-                var parametersObj = new JsonObject();
-                _sharedContext.TryAdd("workflow", parametersObj);
-                parametersObj.TryAdd("parameters", JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Parameters))!);
+                // Add workflow object with parameters
+                var workflowObj = new JsonObject();
+                _sharedContext.TryAdd("workflow", workflowObj);
+                workflowObj.TryAdd("parameters", JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Parameters))!);
+
+                // Add environment variables at root level
+                _sharedContext.TryAdd("environment", JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(EnvironmentVariables))!);
 
                 return _sharedContext;
             }

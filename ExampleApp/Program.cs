@@ -1,6 +1,5 @@
 using ExampleApp.Components;
-using ExampleApp.Services;
-using BlazorExecutionFlow.Services;
+using BlazorExecutionFlow.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,10 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Register workflow service
-builder.Services.AddSingleton<WorkflowService>();
-builder.Services.AddSingleton<EnvironmentVariablesService>();
-builder.Services.AddSingleton<UserPromptService>();
+// Register BlazorExecutionFlow services with file-based storage
+builder.Services.AddBlazorExecutionFlow(options =>
+{
+    // Optional: customize storage paths
+    options.WorkflowStorageDirectory = Path.Combine(builder.Environment.ContentRootPath, "Data", "Workflows");
+    options.EnvironmentVariablesFilePath = Path.Combine(builder.Environment.ContentRootPath, "Data", "environment-variables.json");
+});
 
 var app = builder.Build();
 

@@ -209,6 +209,7 @@
     [Parameter] public bool IncludeControlPanel { get; set; } = true;
     [Parameter] public bool EnableStatusAnimations { get; set; } = true;
     [Parameter] public Dictionary<string, string> WorkflowParameters { get; set; } = new();
+    [Parameter] public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
 
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
     private BlazorExecutionFlowGraphBase? _base;
@@ -502,7 +503,8 @@
     {
         await Graph.Run(new()
         {
-            Parameters = WorkflowParameters.ToFrozenDictionary()
+            Parameters = WorkflowParameters.ToFrozenDictionary(),
+            EnvironmentVariables = EnvironmentVariables.ToFrozenDictionary()
         });
     }
 
@@ -671,7 +673,8 @@
     {
         _ = Graph.Run(new()
         {
-            Parameters = WorkflowParameters.ToFrozenDictionary()
+            Parameters = WorkflowParameters.ToFrozenDictionary(),
+            EnvironmentVariables = EnvironmentVariables.ToFrozenDictionary()
         });
     }
 

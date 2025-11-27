@@ -4,10 +4,12 @@
 @using BlazorExecutionFlow.Helpers
 @using BlazorExecutionFlow.Models
 @using BlazorExecutionFlow.Models.NodeV2
+@using BlazorExecutionFlow.Services
 @using System.Text.Json
 @using static BlazorExecutionFlow.Helpers.DrawflowHelpers
 @inject NavigationManager Navigation
-@inject ExampleApp.Services.WorkflowService WorkflowService
+@inject IWorkflowService WorkflowService
+@inject IEnvironmentVariablesService EnvVarService
 
 <div class="page-container">
     <div class="page-header">
@@ -60,7 +62,8 @@
                                           Style="height:100vh;"
                                           Options="@options"
                                           Graph="_graph"
-                                          WorkflowParameters="_workflowInfo.Inputs"/>
+                                          WorkflowParameters="_workflowInfo.Inputs"
+                                          EnvironmentVariables="_environmentVariables"/>
             }
         </div>
     </div>
@@ -77,6 +80,8 @@
     private bool isEditingWorkflowName = false;
     private string editingWorkflowName = string.Empty;
     private ElementReference workflowNameInput;
+    private Dictionary<string, string> _environmentVariables = new();
+    private string _selectedEnvironment = "Development";
 
     protected override void OnInitialized()
     {
@@ -94,6 +99,15 @@
                 Console.WriteLine($"Failed to load workflow: {ex.Message}");
             }
         }
+
+        // Load environment variables for the default environment
+        var environments = EnvVarService.GetAllEnvironments();
+        if (environments.Any())
+        {
+            _selectedEnvironment = environments.First();
+            _environmentVariables = EnvVarService.GetAllVariables(_selectedEnvironment);
+        }
+
 		_isLoaded = true;
 	}
 

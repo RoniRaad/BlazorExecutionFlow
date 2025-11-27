@@ -2,12 +2,12 @@
 @page "/workflows"
 @using BlazorExecutionFlow.Components
 @using BlazorExecutionFlow.Models
-@using ExampleApp.Services
+@using BlazorExecutionFlow.Services
 @using ExampleApp.Components.Layout
 @layout EmptyLayout
 @inject NavigationManager Navigation
-@inject WorkflowService WorkflowService
-@inject EnvironmentVariablesService EnvVarService
+@inject IWorkflowService WorkflowService
+@inject IEnvironmentVariablesService EnvVarService
 
 <PageTitle>Workflows</PageTitle>
 
