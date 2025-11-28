@@ -101,7 +101,6 @@ namespace BlazorExecutionFlow.Helpers
                 types.Add(typeof(BaseNodeCollection));
                 types.Add(typeof(CollectionNodes));
                 types.Add(typeof(AdvancedIterationNodes));
-                types.Add(typeof(WorkflowNodes));
             }
 
             // Add explicitly registered types

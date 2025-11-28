@@ -5,6 +5,8 @@ using System.Text.Json.Serialization;
 using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Flow.BaseNodes;
 using BlazorExecutionFlow.Helpers;
+using BlazorExecutionFlow.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BlazorExecutionFlow.Models.NodeV2
 {
@@ -35,6 +37,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
         [JsonConverter(typeof(MethodInfoJsonConverter))]
         public required MethodInfo BackingMethod { get; set; }
+        [JsonIgnore]
+        public string Name => NameOverride ?? BackingMethod.Name;
         public string? NameOverride { get; set; }
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Section { get; set; } = string.Empty;
@@ -50,7 +54,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
         [JsonIgnore] public JsonObject? Input { get; set; }
         [JsonIgnore] public JsonObject? Result { get; set; }
-        public string ParentWorkflowId { get; set; }
+        public string? ParentWorkflowId { get; set; }
         public bool MergeOutputWithInput { get; set; } = false;
 
         public List<string> DeclaredOutputPorts { get; set; } = [];
@@ -262,14 +266,25 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 Input = formattedJsonObjectResult;
 
-                var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
-                if (BackingMethod.Name == nameof(WorkflowNodes.ExecuteWorkflow) 
-                    && BackingMethod == typeof(WorkflowNodes).GetMethod(nameof(WorkflowNodes.ExecuteWorkflow)))
+                if (BackingMethod.Name == nameof(WorkflowHelpers.ExecuteWorkflow) 
+                    && BackingMethod == typeof(WorkflowHelpers).GetMethod(nameof(WorkflowHelpers.ExecuteWorkflow)))
                 {
-                    WorkflowHelpers.ExecuteWorkflow();
+                    var workflowService = NodeServiceProvider.Instance?.GetService<IWorkflowService>();
+                    var workflow = workflowService?.GetWorkflow(ParentWorkflowId);
+
+                    if (workflow is not null)
+                    {
+                        var dictionaryParam = CreateDictionaryParameter(BackingMethod.GetParameters()[1], formattedJsonObjectResult);
+                        var jsonObject = new JsonObject();
+                        var result = await WorkflowHelpers.ExecuteWorkflow(workflow, dictionaryParam, SharedExecutionContext?.EnvironmentVariables?.ToDictionary() ?? []);
+                        result.Remove("environment");
+                        jsonObject.SetByPath($"output.external_workflows.{workflow.Id}", result);
+                        Result = jsonObject;
+                    }
                 }
                 else
                 {
+                    var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
                     Result = await InvokeBackingMethod(filledMethodParameters);
                 }
 
@@ -553,74 +568,114 @@ namespace BlazorExecutionFlow.Models.NodeV2
         private object[] GetMethodParametersFromInputResult(JsonObject inputPayload)
         {
             var parameters = BackingMethod.GetParameters();
-            var methodParameterNameToValueMap = new Dictionary<string, string?>(StringComparer.Ordinal);
+            var methodParameterNameToValueMap = BuildMethodParameterNameToValueMap();
             var orderedMethodParameters = new object?[parameters.Length];
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var parameter = parameters[i];
+                orderedMethodParameters[i] = CreateParameterValue(parameter, methodParameterNameToValueMap, inputPayload);
+            }
+
+            return orderedMethodParameters!;
+        }
+
+        private Dictionary<string, string?> BuildMethodParameterNameToValueMap()
+        {
+            var methodParameterNameToValueMap = new Dictionary<string, string?>(StringComparer.Ordinal);
 
             foreach (var pathKvpMap in NodeInputToMethodInputMap)
             {
                 methodParameterNameToValueMap[pathKvpMap.To] = pathKvpMap.From;
             }
 
-            for (int i = 0; i < parameters.Length; i++)
+            return methodParameterNameToValueMap;
+        }
+
+        private object? CreateParameterValue(
+            ParameterInfo parameter,
+            Dictionary<string, string?> methodParameterNameToValueMap,
+            JsonObject inputPayload)
+        {
+            if (parameter.ParameterType == typeof(NodeContext))
             {
-                var parameter = parameters[i];
-
-                if (parameter.ParameterType == typeof(NodeContext))
-                {
-                    // Create context dictionary, merging shared execution context if available
-                    var contextDict = new Dictionary<string, object?>();
-
-                    orderedMethodParameters[i] = new NodeContext
-                    {
-                        CurrentNode = this,
-                        InputNodes = InputNodes,
-                        OutputNodes = OutputNodes,
-                        Context = contextDict,
-                        ExecutePortInternal = ExecutePortAsync
-                    };
-                    continue;
-                }
-
-                if (parameter.ParameterType == typeof(IServiceProvider))
-                {
-                    orderedMethodParameters[i] = Helpers.NodeServiceProvider.Instance;
-                    continue;
-                }
-
-                // Handle Dictionary<string, string> parameters
-                if (parameter.ParameterType == typeof(Dictionary<string, string>))
-                {
-                    var dictionary = new Dictionary<string, string>();
-
-                    if (parameter.Name != null && DictionaryParameterMappings.TryGetValue(parameter.Name, out var dictMappings))
-                    {
-                        foreach (var mapping in dictMappings)
-                        {
-                            if (string.IsNullOrWhiteSpace(mapping.To)) // "To" is the dictionary key
-                                continue;
-
-                            string? dictValue = null;
-
-                            if (!string.IsNullOrWhiteSpace(mapping.From))
-                            {
-                                var result = ScribanHelpers.GetScribanObject(mapping.From, inputPayload, SharedExecutionContext ?? new(), parameter.ParameterType);
-                                dictValue = result?.ToString();
-                            }
-
-                            dictionary[mapping.To] = dictValue ?? string.Empty;
-                        }
-                    }
-
-                    orderedMethodParameters[i] = dictionary;
-                    continue;
-                }
-
-                methodParameterNameToValueMap.TryGetValue(parameter.Name!, out var value);
-
-                orderedMethodParameters[i] = ScribanHelpers.GetScribanObject(value, inputPayload, SharedExecutionContext ?? new(), parameter.ParameterType);
+                return CreateNodeContext();
             }
 
-            return orderedMethodParameters!;
+            if (parameter.ParameterType == typeof(IServiceProvider))
+            {
+                return Helpers.NodeServiceProvider.Instance;
+            }
+
+            if (parameter.ParameterType == typeof(Dictionary<string, string>))
+            {
+                return CreateDictionaryParameter(parameter, inputPayload);
+            }
+
+            return CreateScribanParameterValue(parameter, methodParameterNameToValueMap, inputPayload);
+        }
+
+        private NodeContext CreateNodeContext()
+        {
+            // Create context dictionary, merging shared execution context if available
+            var contextDict = new Dictionary<string, object?>();
+
+            return new NodeContext
+            {
+                CurrentNode = this,
+                InputNodes = InputNodes,
+                OutputNodes = OutputNodes,
+                Context = contextDict,
+                ExecutePortInternal = ExecutePortAsync
+            };
+        }
+
+        private Dictionary<string, string> CreateDictionaryParameter(
+            ParameterInfo parameter,
+            JsonObject inputPayload)
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            if (parameter.Name != null &&
+                DictionaryParameterMappings.TryGetValue(parameter.Name, out var dictMappings))
+            {
+                foreach (var mapping in dictMappings)
+                {
+                    if (string.IsNullOrWhiteSpace(mapping.To)) // "To" is the dictionary key
+                        continue;
+
+                    string? dictValue = null;
+
+                    if (!string.IsNullOrWhiteSpace(mapping.From))
+                    {
+                        var result = ScribanHelpers.GetScribanObject(
+                            mapping.From,
+                            inputPayload,
+                            SharedExecutionContext ?? new(),
+                            parameter.ParameterType);
+
+                        dictValue = result?.ToString();
+                    }
+
+                    dictionary[mapping.To] = dictValue ?? string.Empty;
+                }
+            }
+
+            return dictionary;
+        }
+
+        private object? CreateScribanParameterValue(
+            ParameterInfo parameter,
+            Dictionary<string, string?> methodParameterNameToValueMap,
+            JsonObject inputPayload)
+        {
+            methodParameterNameToValueMap.TryGetValue(parameter.Name!, out var value);
+
+            return ScribanHelpers.GetScribanObject(
+                value,
+                inputPayload,
+                SharedExecutionContext ?? new(),
+                parameter.ParameterType);
         }
 
         public void Dispose()

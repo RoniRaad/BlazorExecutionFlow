@@ -1,5 +1,6 @@
 using ExampleApp.Components;
 using BlazorExecutionFlow.Extensions;
+using BlazorExecutionFlow.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +16,9 @@ builder.Services.AddBlazorExecutionFlow(options =>
     options.EnvironmentVariablesFilePath = Path.Combine(builder.Environment.ContentRootPath, "Data", "environment-variables.json");
 });
 
+
 var app = builder.Build();
+NodeServiceProvider.ConfigureServiceProvider(app.Services);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -229,7 +229,7 @@ namespace BlazorExecutionFlow.Helpers
 
         private static string BuildHtml(Node node)
         {
-            var displayName = TypeHelpers.AddSpacesToPascalCase(node.BackingMethod.Name);
+            var displayName = TypeHelpers.AddSpacesToPascalCase(node.Name);
             return $"""
                     <div class='node-type-id-container'>
                         <h5 class='node-type-id'>
@@ -237,7 +237,7 @@ namespace BlazorExecutionFlow.Helpers
                         </h5>
                     </div>
                     <div class='title-container'>
-                        <div class='title' style='text-align: center;'>{TypeHelpers.AddSpacesToPascalCase(node.BackingMethod.Name)}</div>
+                        <div class='title' style='text-align: center;'>{TypeHelpers.AddSpacesToPascalCase(node.Name)}</div>
                     </div>
                     <div class='main-content' style='min-width:300px'>
                     </div>

@@ -54,6 +54,15 @@ namespace BlazorExecutionFlow.Helpers
             return node;
         }
 
+        public static Node CreateNodeFromWorkflow(WorkflowInfo workflow)
+        {
+            var node = CreateNodeFromMethod(typeof(WorkflowHelpers).GetMethod(nameof(WorkflowHelpers.ExecuteWorkflow)));
+            node.ParentWorkflowId = workflow.Id;
+            node.NameOverride = workflow.Name;
+
+            return node;
+        }
+
         public static List<Node> GetNodesObjectsV2()
         {
             var nodes = new List<Node>();
@@ -87,7 +96,7 @@ namespace BlazorExecutionFlow.Helpers
                 : 1;
 
             var nodeId = await dfBase.Editor!.AddNodeAsync(
-                name: node.BackingMethod.Name,
+                name: node.Name,
                 inputs: inputs,
                 outputs: outputs,
                 x: node.PosX, y: node.PosY,
@@ -103,7 +112,7 @@ namespace BlazorExecutionFlow.Helpers
                         </h5>
                     </div>
                     <div class='title-container'>
-                        <div class='title' style='text-align: center;'>{TypeHelpers.AddSpacesToPascalCase(node.BackingMethod.Name)}</div>
+                        <div class='title' style='text-align: center;'>{TypeHelpers.AddSpacesToPascalCase(node.Name)}</div>
                     </div>
                     <div class='main-content' style='min-width:300px'>
                         {inputHtml}
