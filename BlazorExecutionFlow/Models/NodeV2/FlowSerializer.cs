@@ -138,12 +138,18 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     var workflowService = Helpers.NodeServiceProvider.Instance.GetService<IWorkflowService>();
                     var workflow = workflowService.GetWorkflow(node.ParentWorkflowId);
                     var discoveredInputs = WorkflowInputDiscovery.DiscoverInputs(workflow.FlowGraph);
-                    var inputDiff = discoveredInputs.Where(x => !node.NodeInputToMethodInputMap.Any(y => y.To == x));
-
-                    foreach (var input in inputDiff)
+                    var newInputMap = new List<PathMapEntry>();
+                    foreach (var input in discoveredInputs)
                     {
-                        node.NodeInputToMethodInputMap.Add(new PathMapEntry() { To = input });
+                        var currentMap = node.NodeInputToMethodInputMap.FirstOrDefault(x => x.To == input);
+                        if (currentMap == null)
+                        {
+                            newInputMap.Add(new PathMapEntry() { To = input });
+                        }
                     }
+
+                    // We replace it so that if the inputs on the workflow are changed stale input maps are removed.
+                    node.NodeInputToMethodInputMap = newInputMap;
                 }
 
                 nodes.Add(node);

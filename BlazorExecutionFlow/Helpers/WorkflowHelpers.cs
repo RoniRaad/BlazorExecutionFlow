@@ -10,7 +10,7 @@ namespace BlazorExecutionFlow.Helpers
     {
         [BlazorFlowNodeMethod(NodeType.Function, "Workflow")]
         public static async Task<JsonObject> ExecuteWorkflow(WorkflowInfo workflow, 
-            [BlazorFlowDictionaryMapping] Dictionary<string, string> inputParams, Dictionary<string, string> envVariables)
+            Dictionary<string, string> inputParams, Dictionary<string, string> envVariables)
         {
             var context = new GraphExecutionContext()
             {

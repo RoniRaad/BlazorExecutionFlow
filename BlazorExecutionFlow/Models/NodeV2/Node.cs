@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System.Data.Common;
+using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -274,9 +276,20 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                     if (workflow is not null)
                     {
-                        var dictionaryParam = CreateDictionaryParameter(BackingMethod.GetParameters()[1], formattedJsonObjectResult);
+                        Dictionary<string, string> mappedValues = [];
+                        foreach (var param in this.NodeInputToMethodInputMap)
+                        {
+                            var value = CreateScribanParameterValue(typeof(string),
+                                param.To,
+                                BuildMethodParameterNameToValueMap(),
+                                formattedJsonObjectResult
+                                );
+
+                            mappedValues.Add(param.To, value as string);
+                        }
+
                         var jsonObject = new JsonObject();
-                        var result = await WorkflowHelpers.ExecuteWorkflow(workflow, dictionaryParam, SharedExecutionContext?.EnvironmentVariables?.ToDictionary() ?? []);
+                        var result = await WorkflowHelpers.ExecuteWorkflow(workflow, mappedValues, SharedExecutionContext?.EnvironmentVariables?.ToDictionary() ?? []);
                         result.Remove("environment");
                         jsonObject.SetByPath($"output.external_workflows.{workflow.Id}", result);
                         Result = jsonObject;
@@ -664,18 +677,32 @@ namespace BlazorExecutionFlow.Models.NodeV2
             return dictionary;
         }
 
-        private object? CreateScribanParameterValue(
+        public object? CreateScribanParameterValue(
             ParameterInfo parameter,
             Dictionary<string, string?> methodParameterNameToValueMap,
             JsonObject inputPayload)
         {
-            methodParameterNameToValueMap.TryGetValue(parameter.Name!, out var value);
+            return CreateScribanParameterValue(
+                parameter.ParameterType,
+                parameter.Name!,
+                methodParameterNameToValueMap,
+                inputPayload
+            );
+        }
 
+        public object? CreateScribanParameterValue(
+                Type paramType,
+                string paramName, 
+                Dictionary<string, string?> methodParameterNameToValueMap,
+                JsonObject inputPayload
+            )
+        {
+            methodParameterNameToValueMap.TryGetValue(paramName, out var value);
             return ScribanHelpers.GetScribanObject(
                 value,
                 inputPayload,
                 SharedExecutionContext ?? new(),
-                parameter.ParameterType);
+                paramType);
         }
 
         public void Dispose()
