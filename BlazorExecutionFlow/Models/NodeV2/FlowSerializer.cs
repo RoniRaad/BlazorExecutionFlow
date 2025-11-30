@@ -132,29 +132,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     NameOverride = serNode.NameOverride
                 };
 
-                if (node.IsWorkflowNode)
-                {
-                    var workflowService = Helpers.NodeServiceProvider.Instance.GetService<IWorkflowService>();
-                    var workflow = workflowService.GetWorkflow(node.ParentWorkflowId);
-                    var discoveredInputs = WorkflowInputDiscovery.DiscoverInputs(workflow.FlowGraph);
-                    var newInputMap = new List<PathMapEntry>();
-                    foreach (var input in discoveredInputs)
-                    {
-                        var currentMap = node.NodeInputToMethodInputMap.FirstOrDefault(x => x.To == input);
-                        if (currentMap == null)
-                        {
-                            newInputMap.Add(new PathMapEntry() { To = input });
-                        }
-                        else
-                        {
-                            newInputMap.Add(currentMap);
-                        }
-                    }
-
-                    // We replace it so that if the inputs on the workflow are changed stale input maps are removed.
-                    node.NodeInputToMethodInputMap = newInputMap;
-                }
-
                 nodes.Add(node);
                 nodeMap[serNode.Id] = node;
             }

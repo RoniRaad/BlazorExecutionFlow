@@ -1,7 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using BlazorExecutionFlow.Helpers;
 using BlazorExecutionFlow.Models;
+using BlazorExecutionFlow.Models.NodeV2;
 using Microsoft.Extensions.Logging;
 
 namespace BlazorExecutionFlow.Services
@@ -61,6 +63,7 @@ namespace BlazorExecutionFlow.Services
                             var workflow = JsonSerializer.Deserialize<WorkflowInfo>(json, _jsonOptions);
                             if (workflow != null)
                             {
+                                PopulateInputData(workflow);
                                 workflows.Add(workflow);
                             }
                         }
@@ -93,7 +96,13 @@ namespace BlazorExecutionFlow.Services
                     }
 
                     var json = File.ReadAllText(filePath);
-                    return JsonSerializer.Deserialize<WorkflowInfo>(json, _jsonOptions);
+                    var workflow = JsonSerializer.Deserialize<WorkflowInfo>(json, _jsonOptions);
+                    if (workflow != null)
+                    {
+                        PopulateInputData(workflow);
+                    }
+
+                    return workflow;
                 }
                 catch (Exception ex)
                 {
@@ -158,6 +167,35 @@ namespace BlazorExecutionFlow.Services
                 {
                     _logger?.LogError(ex, "Failed to delete workflow: {Id}", id);
                     throw;
+                }
+            }
+        }
+
+        private void PopulateInputData(WorkflowInfo workflow)
+        {
+            foreach (var nodeKvp in workflow.FlowGraph.Nodes)
+            {
+                var node = nodeKvp.Value;
+                if (node.IsWorkflowNode)
+                {
+                    var externalWorkflow = GetWorkflow(node.ParentWorkflowId!);
+                    var discoveredInputs = WorkflowInputDiscovery.DiscoverInputs(externalWorkflow?.FlowGraph ?? new());
+                    var newInputMap = new List<PathMapEntry>();
+                    foreach (var input in discoveredInputs)
+                    {
+                        var currentMap = node.NodeInputToMethodInputMap.FirstOrDefault(x => x.To == input);
+                        if (currentMap == null)
+                        {
+                            newInputMap.Add(new PathMapEntry() { To = input });
+                        }
+                        else
+                        {
+                            newInputMap.Add(currentMap);
+                        }
+                    }
+
+                    // We replace it so that if the inputs on the workflow are changed stale input maps are removed.
+                    node.NodeInputToMethodInputMap = newInputMap;
                 }
             }
         }
