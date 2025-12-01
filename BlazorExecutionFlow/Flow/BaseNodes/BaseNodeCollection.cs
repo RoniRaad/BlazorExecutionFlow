@@ -41,10 +41,10 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         }
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
-        public static int Min(int a, int b) => Math.Min(a, b);
+        public static double Min(double a, double b) => Math.Min(a, b);
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
-        public static int Max(int a, int b) => Math.Max(a, b);
+        public static double Max(double a, double b) => Math.Max(a, b);
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Math")]
         public static int Clamp(int value, int min, int max)
@@ -125,8 +125,11 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
         public static double CeilingD(double value) => Math.Ceiling(value);
 
         [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
-        public static double Lerp(double a, double b, double t)
-            => a + (b - a) * ClampD(t, 0.0, 1.0);
+        public static double Lerp(double start, double end, double t)
+            => start + (end - start) * ClampD(t, 0.0, 1.0);
+        [BlazorFlowNodeMethod(Models.NodeType.Function, "Math/Float")]
+        public static double Sign(double input)
+            => Math.Sign(input);
 
         // ---------- Strings ----------
 
