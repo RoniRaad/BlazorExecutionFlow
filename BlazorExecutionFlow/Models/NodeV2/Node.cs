@@ -1,16 +1,12 @@
-﻿using System.Data.Common;
-using System.Reflection;
-using System.Reflection.Metadata;
-using System.Text;
+﻿using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using System.Threading;
 using BlazorExecutionFlow.Flow.Attributes;
+using BlazorExecutionFlow.Flow.BaseNodes;
 using BlazorExecutionFlow.Helpers;
-using Newtonsoft.Json.Linq;
-using Scriban;
-using Scriban.Runtime;
+using BlazorExecutionFlow.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BlazorExecutionFlow.Models.NodeV2
 {
@@ -36,31 +32,54 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
     public class Node : IDisposable
     {
+        private const string DefaultPortName = "default";
+
         private readonly SemaphoreSlim _executionSemaphore = new(1);
+        private readonly List<string> _pendingPortTriggers = new();
+        private readonly object _pendingPortsLock = new();
+
         private bool _disposed;
+        private bool _portsInitialized;
+        private bool _isPortDriven;
 
         [JsonConverter(typeof(MethodInfoJsonConverter))]
         public required MethodInfo BackingMethod { get; set; }
+
+        [JsonIgnore]
+        public string Name => NameOverride ?? BackingMethod.Name;
+
+        public bool IsWorkflowNode =>
+            BackingMethod.Name == nameof(WorkflowHelpers.ExecuteWorkflow)
+            && BackingMethod == typeof(WorkflowHelpers).GetMethod(nameof(WorkflowHelpers.ExecuteWorkflow));
+
+        public string? NameOverride { get; set; }
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Section { get; set; } = string.Empty;
         public string DrawflowNodeId { get; set; } = string.Empty;
         public double PosX { get; set; }
         public double PosY { get; set; }
-        [JsonIgnore] public GraphExecutionContext? SharedExecutionContext { get; set; }
+
+        [JsonIgnore]
+        public GraphExecutionContext? SharedExecutionContext { get; set; }
+
         public List<PathMapEntry> NodeInputToMethodInputMap { get; set; } = [];
         public List<PathMapEntry> MethodOutputToNodeOutputMap { get; set; } = [];
 
         // For Dictionary<string, string> parameters: maps parameter name -> list of key-value mappings
         public Dictionary<string, List<PathMapEntry>> DictionaryParameterMappings { get; set; } = new();
 
-        [JsonIgnore] public JsonObject? Input { get; set; }
-        [JsonIgnore] public JsonObject? Result { get; set; }
+        [JsonIgnore]
+        public JsonObject? Input { get; set; }
 
-        public bool MergeOutputWithInput { get; set; } = false;
+        [JsonIgnore]
+        public JsonObject? Result { get; set; }
+
+        public string? ParentWorkflowId { get; set; }
+        public bool MergeOutputWithInput { get; set; }
 
         public List<string> DeclaredOutputPorts { get; set; } = [];
 
-        [JsonIgnore] public bool HasError { get; set; } = false;
+        [JsonIgnore] public bool HasError { get; set; }
         [JsonIgnore] public string? ErrorMessage { get; set; }
         [JsonIgnore] public Exception? LastException { get; set; }
 
@@ -75,13 +94,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public Dictionary<string, List<Node>> OutputPorts { get; } =
             new(StringComparer.OrdinalIgnoreCase);
 
-        [JsonIgnore] private bool _portsInitialized;
-        [JsonIgnore] private bool _isPortDriven;
-
-        // Ports requested while this node is running
-        [JsonIgnore] private readonly List<string> _pendingPortTriggers = new();
-        [JsonIgnore] private readonly object _pendingPortsLock = new();
-
         [JsonIgnore]
         public bool IsPortDriven
         {
@@ -91,6 +103,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 return _isPortDriven;
             }
         }
+
+        #region Port Setup / Connections
 
         private void EnsurePortsInitialized()
         {
@@ -119,7 +133,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
         {
             EnsurePortsInitialized();
 
-            portName ??= "default";
+            portName ??= DefaultPortName;
 
             if (!OutputPorts.TryGetValue(portName, out var list))
             {
@@ -128,11 +142,19 @@ namespace BlazorExecutionFlow.Models.NodeV2
             }
 
             if (!list.Contains(target))
+            {
                 list.Add(target);
+            }
 
             if (!OutputNodes.Contains(target))
+            {
                 OutputNodes.Add(target);
+            }
         }
+
+        #endregion
+
+        #region Clear / Graph Utilities
 
         /// <summary>
         /// Clears the cached result of this node, allowing it to be re-executed.
@@ -166,7 +188,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
         /// <summary>
         /// Gets all downstream nodes reachable from a specific port (or all ports).
-        /// Caches the result for performance in iteration scenarios.
         /// </summary>
         public List<Node> GetDownstreamNodes(string? portName = null)
         {
@@ -180,10 +201,9 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             foreach (var target in targets)
             {
-                if (!visited.Contains(target))
+                if (visited.Add(target))
                 {
                     queue.Enqueue(target);
-                    visited.Add(target);
                 }
             }
 
@@ -194,10 +214,9 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
                 foreach (var child in node.OutputNodes)
                 {
-                    if (!visited.Contains(child))
+                    if (visited.Add(child))
                     {
                         queue.Enqueue(child);
-                        visited.Add(child);
                     }
                 }
             }
@@ -216,6 +235,10 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 node.ClearResult();
             }
         }
+
+        #endregion
+
+        #region Execution
 
         public async Task ExecuteNode(Node? caller = null)
         {
@@ -236,13 +259,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
             if (Result != null)
                 return Result;
 
-            OnStartExecuting?.Invoke(this, EventArgs.Empty);
-
-            // Clear previous errors
-            HasError = false;
-            ErrorMessage = null;
-            LastException = null;
-
             await _executionSemaphore.WaitAsync();
 
             try
@@ -250,71 +266,42 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 if (Result != null)
                     return Result;
 
-                // Merge multiple upstream inputs
-                var upstreamMerged = new JsonObject();
+                OnStartExecuting?.Invoke(this, EventArgs.Empty);
+                ResetErrorState();
 
-                if (InputNodes.Count > 0)
+                // Merge of all input data
+                var inputNodesData = await BuildInputNodesDataAsync();
+
+                // Input nodes output data is our input data
+                var formattedInput = BuildFormattedInput(inputNodesData);
+                Input = formattedInput;
+
+                if (IsWorkflowNode)
                 {
-                    foreach (var inputNode in InputNodes)
-                    {
-                        var res = await inputNode.GetResult(this);
-                        upstreamMerged.Merge(res);
-                    }
+                    Result = await ExecuteAsWorkflowNodeAsync(formattedInput);
+                }
+                else
+                {
+                    var filledMethodParameters = GetMethodParametersFromInputResult(formattedInput);
+                    Result = await InvokeBackingMethod(filledMethodParameters);
                 }
 
-                var formattedJsonObjectResult = new JsonObject();
-                formattedJsonObjectResult.SetByPath("input", upstreamMerged.GetByPath("output"));
+                PropagateWorkflowOutputToSharedContext(Result);
 
-                Input = formattedJsonObjectResult;
-
-                var filledMethodParameters = GetMethodParametersFromInputResult(formattedJsonObjectResult);
-                Result = await InvokeBackingMethod(filledMethodParameters);
-
-                var outputResults = Result.GetByPath("output.workflow.output");
-                var outputResultsAsObject = outputResults as JsonObject;
-                if (outputResultsAsObject is null)
+                if (MergeOutputWithInput && Result != null)
                 {
-                    SharedExecutionContext?.SharedContext?.Merge(outputResultsAsObject);
-                }
-
-                if (MergeOutputWithInput)
-                {
-                    Result.Merge(upstreamMerged);
+                    Result.Merge(inputNodesData);
                 }
 
                 // Now that Result is set, it's safe to execute any queued port triggers
                 await FlushPendingPortsAsync();
 
-                return Result;
+                return Result ?? [];
             }
             catch (Exception ex)
             {
-                // Store error information
-                HasError = true;
-                ErrorMessage = $"Node '{BackingMethod?.Name ?? "Unknown"}' failed: {ex.Message}";
-                LastException = ex;
-
-                // Fire error event
-                OnError?.Invoke(this, new NodeErrorEventArgs
-                {
-                    Exception = ex,
-                    Message = ErrorMessage,
-                    Node = this
-                });
-
-                // Create an error result so downstream nodes can continue if needed
-                Result = new JsonObject
-                {
-                    ["error"] = new JsonObject
-                    {
-                        ["message"] = ErrorMessage,
-                        ["nodeId"] = DrawflowNodeId,
-                        ["nodeName"] = BackingMethod?.Name ?? "Unknown",
-                        ["timestamp"] = DateTime.UtcNow.ToString("o")
-                    }
-                };
-
-                return Result;
+                HandleExecutionException(ex);
+                return Result!;
             }
             finally
             {
@@ -322,6 +309,111 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 OnStopExecuting?.Invoke(this, EventArgs.Empty);
             }
         }
+
+        private void ResetErrorState()
+        {
+            HasError = false;
+            ErrorMessage = null;
+            LastException = null;
+        }
+
+        private async Task<JsonObject> BuildInputNodesDataAsync()
+        {
+            var inputNodesData = new JsonObject();
+
+            if (InputNodes.Count == 0)
+                return inputNodesData;
+
+            foreach (var inputNode in InputNodes)
+            {
+                var res = await inputNode.GetResult(this);
+                inputNodesData.Merge(res);
+            }
+
+            return inputNodesData;
+        }
+
+        private static JsonObject BuildFormattedInput(JsonObject inputNodesData)
+        {
+            var formattedJsonObjectResult = new JsonObject();
+            formattedJsonObjectResult.SetByPath("input", inputNodesData.GetByPath("output"));
+            return formattedJsonObjectResult;
+        }
+
+        private async Task<JsonObject> ExecuteAsWorkflowNodeAsync(JsonObject formattedInput)
+        {
+            var workflowService = NodeServiceProvider.Instance?.GetService<IWorkflowService>();
+            var workflow = workflowService?.GetWorkflow(ParentWorkflowId);
+
+            var jsonObject = new JsonObject();
+            if (workflow is null)
+                return jsonObject;
+
+            Dictionary<string, string> mappedValues = [];
+            var nameToPathMap = BuildMethodParameterNameToValueMap();
+
+            foreach (var param in NodeInputToMethodInputMap)
+            {
+                var value = CreateScribanParameterValue(
+                    typeof(string),
+                    param.To,
+                    nameToPathMap,
+                    formattedInput
+                );
+
+                mappedValues[param.To] = value as string ?? string.Empty;
+            }
+
+            var environment = SharedExecutionContext?.EnvironmentVariables?.ToDictionary() ?? [];
+            var result = await WorkflowHelpers.ExecuteWorkflow(workflow, mappedValues, environment);
+
+            result.Remove("environment");
+            jsonObject.SetByPath($"output.external_workflows.{workflow.Id}", result);
+
+            return jsonObject;
+        }
+
+        private void PropagateWorkflowOutputToSharedContext(JsonObject? result)
+        {
+            if (result == null || SharedExecutionContext?.SharedContext == null)
+                return;
+
+            var outputResults = result.GetByPath("output.workflow.output");
+            if (outputResults is JsonObject outputResultsObject)
+            {
+                SharedExecutionContext.SharedContext.Merge(outputResultsObject);
+            }
+        }
+
+        private void HandleExecutionException(Exception ex)
+        {
+            HasError = true;
+            ErrorMessage = $"Node '{BackingMethod?.Name ?? "Unknown"}' failed: {ex.Message}";
+            LastException = ex;
+
+            OnError?.Invoke(this, new NodeErrorEventArgs
+            {
+                Exception = ex,
+                Message = ErrorMessage!,
+                Node = this
+            });
+
+            // Create an error result so downstream nodes can continue if needed
+            Result = new JsonObject
+            {
+                ["error"] = new JsonObject
+                {
+                    ["message"] = ErrorMessage,
+                    ["nodeId"] = DrawflowNodeId,
+                    ["nodeName"] = BackingMethod?.Name ?? "Unknown",
+                    ["timestamp"] = DateTime.UtcNow.ToString("o")
+                }
+            };
+        }
+
+        #endregion
+
+        #region Port Execution
 
         // Called by NodeContext
         internal Task ExecutePortAsync(string portName)
@@ -339,7 +431,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             // If we don't have a Result yet, we're still executing this node.
             // Queue the port and run it after Result is ready to avoid deadlock.
-            // Lock to prevent race condition between Result check and queue add
             lock (_pendingPortsLock)
             {
                 if (Result == null)
@@ -399,6 +490,10 @@ namespace BlazorExecutionFlow.Models.NodeV2
             }
         }
 
+        #endregion
+
+        #region Backing Method Invocation / Parameters
+
         private async Task<JsonObject> InvokeBackingMethod(object[] filledMethodParameters)
         {
             if (BackingMethod == null)
@@ -415,13 +510,14 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 methodInvocationResponse = null;
                 return [];
             }
+
             if (returnType == typeof(Task))
             {
                 await ((Task)methodInvocationResponse!);
                 methodInvocationResponse = null;
             }
-            else if (returnType.IsGenericType
-                     && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+            else if (returnType.IsGenericType &&
+                     returnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
                 var task = (Task)methodInvocationResponse!;
                 await task;
@@ -431,8 +527,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
             }
 
             var resultObject = new JsonObject();
-
-            // Get the actual return type (unwrap Task<T> if needed)
             var actualReturnType = TypeHelpers.UnwrapTaskType(returnType);
 
             // Check if this type has curated properties that need special handling
@@ -462,13 +556,20 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
                     resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
 
-                    SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", methodOutputValue?.DeepClone());
-                    SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
+                    SharedExecutionContext?.SharedContext.SetByPath(
+                        $"nodes.node_{DrawflowNodeId}.output",
+                        methodOutputValue?.DeepClone());
+
+                    SharedExecutionContext?.SharedContext.SetByPath(
+                        $"nodes.node_{DrawflowNodeId}.name",
+                        BackingMethod.Name);
 
                     // Also expose to workflow.output.* if flagged
                     if (methodOutputMap.ExposeAsWorkflowOutput)
                     {
-                        SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputValue?.DeepClone());
+                        SharedExecutionContext?.SharedContext.SetByPath(
+                            $"workflow.output.{methodOutputMap.To}",
+                            methodOutputValue?.DeepClone());
                     }
                 }
             }
@@ -504,8 +605,9 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 // Check if this is a single-value type (like JsonObject, arrays, primitives)
                 // For these, we want to map the entire value to "result", not extract properties
                 // However, if we've parsed a JSON string into an object, treat it as a complex object
-                bool isSingleValueType = TypeHelpers.ShouldTreatAsSingleValue(actualReturnType) &&
-                                        serializedResponse is not JsonObject;
+                bool isSingleValueType =
+                    TypeHelpers.ShouldTreatAsSingleValue(actualReturnType) &&
+                    serializedResponse is not JsonObject;
 
                 if (serializedResponse is not JsonObject methodOutputJsonObject || isSingleValueType)
                 {
@@ -513,32 +615,46 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     // Map the entire serialized response to the output
                     foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
                     {
-                        // For single-value types, the mapping is typically "result" -> "result"
-                        // Just map the whole serialized response
                         resultObject.SetByPath($"output.{methodOutputMap.To}", serializedResponse);
-                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", serializedResponse?.DeepClone());
-                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
+
+                        SharedExecutionContext?.SharedContext.SetByPath(
+                            $"nodes.node_{DrawflowNodeId}.output",
+                            serializedResponse?.DeepClone());
+
+                        SharedExecutionContext?.SharedContext.SetByPath(
+                            $"nodes.node_{DrawflowNodeId}.name",
+                            BackingMethod.Name);
 
                         // Also expose to workflow.output.* if flagged
                         if (methodOutputMap.ExposeAsWorkflowOutput)
                         {
-                            SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", serializedResponse?.DeepClone());
+                            SharedExecutionContext?.SharedContext.SetByPath(
+                                $"workflow.output.{methodOutputMap.To}",
+                                serializedResponse?.DeepClone());
                         }
                     }
                 }
                 else
                 {
-                    // Complex object - extract individual properties
+                    // Complex object - expose entire object to mapped outputs
                     foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
                     {
                         resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputJsonObject);
-                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.output", methodOutputJsonObject?.DeepClone());
-                        SharedExecutionContext?.SharedContext.SetByPath($"nodes.node_{DrawflowNodeId}.name", BackingMethod.Name);
+
+                        SharedExecutionContext?.SharedContext.SetByPath(
+                            $"nodes.node_{DrawflowNodeId}.output",
+                            methodOutputJsonObject?.DeepClone());
+
+                        SharedExecutionContext?.SharedContext.SetByPath(
+                            $"nodes.node_{DrawflowNodeId}.name",
+                            BackingMethod.Name);
 
                         // Also expose to workflow.output.* if flagged
                         if (methodOutputMap.ExposeAsWorkflowOutput)
                         {
-                            SharedExecutionContext?.SharedContext.SetByPath($"workflow.output.{methodOutputMap.To}", methodOutputJsonObject?.DeepClone());
+                            SharedExecutionContext?.SharedContext.SetByPath(
+                                $"workflow.output.{methodOutputMap.To}",
+                                methodOutputJsonObject?.DeepClone());
                         }
                     }
                 }
@@ -550,75 +666,133 @@ namespace BlazorExecutionFlow.Models.NodeV2
         private object[] GetMethodParametersFromInputResult(JsonObject inputPayload)
         {
             var parameters = BackingMethod.GetParameters();
-            var methodParameterNameToValueMap = new Dictionary<string, string?>(StringComparer.Ordinal);
+            var methodParameterNameToValueMap = BuildMethodParameterNameToValueMap();
             var orderedMethodParameters = new object?[parameters.Length];
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var parameter = parameters[i];
+                orderedMethodParameters[i] = CreateParameterValue(parameter, methodParameterNameToValueMap, inputPayload);
+            }
+
+            return orderedMethodParameters!;
+        }
+
+        private Dictionary<string, string?> BuildMethodParameterNameToValueMap()
+        {
+            var methodParameterNameToValueMap = new Dictionary<string, string?>(StringComparer.Ordinal);
 
             foreach (var pathKvpMap in NodeInputToMethodInputMap)
             {
                 methodParameterNameToValueMap[pathKvpMap.To] = pathKvpMap.From;
             }
 
-            for (int i = 0; i < parameters.Length; i++)
+            return methodParameterNameToValueMap;
+        }
+
+        private object? CreateParameterValue(
+            ParameterInfo parameter,
+            Dictionary<string, string?> methodParameterNameToValueMap,
+            JsonObject inputPayload)
+        {
+            if (parameter.ParameterType == typeof(NodeContext))
             {
-                var parameter = parameters[i];
-
-                if (parameter.ParameterType == typeof(NodeContext))
-                {
-                    // Create context dictionary, merging shared execution context if available
-                    var contextDict = new Dictionary<string, object?>();
-
-                    orderedMethodParameters[i] = new NodeContext
-                    {
-                        CurrentNode = this,
-                        InputNodes = InputNodes,
-                        OutputNodes = OutputNodes,
-                        Context = contextDict,
-                        ExecutePortInternal = ExecutePortAsync
-                    };
-                    continue;
-                }
-
-                if (parameter.ParameterType == typeof(IServiceProvider))
-                {
-                    orderedMethodParameters[i] = Helpers.NodeServiceProvider.Instance;
-                    continue;
-                }
-
-                // Handle Dictionary<string, string> parameters
-                if (parameter.ParameterType == typeof(Dictionary<string, string>))
-                {
-                    var dictionary = new Dictionary<string, string>();
-
-                    if (parameter.Name != null && DictionaryParameterMappings.TryGetValue(parameter.Name, out var dictMappings))
-                    {
-                        foreach (var mapping in dictMappings)
-                        {
-                            if (string.IsNullOrWhiteSpace(mapping.To)) // "To" is the dictionary key
-                                continue;
-
-                            string? dictValue = null;
-
-                            if (!string.IsNullOrWhiteSpace(mapping.From))
-                            {
-                                var result = ScribanHelpers.GetScribanObject(mapping.From, inputPayload, SharedExecutionContext ?? new(), parameter.ParameterType);
-                                dictValue = result?.ToString();
-                            }
-
-                            dictionary[mapping.To] = dictValue ?? string.Empty;
-                        }
-                    }
-
-                    orderedMethodParameters[i] = dictionary;
-                    continue;
-                }
-
-                methodParameterNameToValueMap.TryGetValue(parameter.Name!, out var value);
-
-                orderedMethodParameters[i] = ScribanHelpers.GetScribanObject(value, inputPayload, SharedExecutionContext ?? new(), parameter.ParameterType);
+                return CreateNodeContext();
             }
 
-            return orderedMethodParameters!;
+            if (parameter.ParameterType == typeof(IServiceProvider))
+            {
+                return NodeServiceProvider.Instance;
+            }
+
+            if (parameter.ParameterType == typeof(Dictionary<string, string>))
+            {
+                return CreateDictionaryParameter(parameter, inputPayload);
+            }
+
+            return CreateScribanParameterValue(parameter, methodParameterNameToValueMap, inputPayload);
         }
+
+        private NodeContext CreateNodeContext()
+        {
+            // Create context dictionary (can be enriched with SharedExecutionContext if needed)
+            var contextDict = new Dictionary<string, object?>();
+
+            return new NodeContext
+            {
+                CurrentNode = this,
+                InputNodes = InputNodes,
+                OutputNodes = OutputNodes,
+                Context = contextDict,
+                ExecutePortInternal = ExecutePortAsync
+            };
+        }
+
+        private Dictionary<string, string> CreateDictionaryParameter(
+            ParameterInfo parameter,
+            JsonObject inputPayload)
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            if (parameter.Name != null &&
+                DictionaryParameterMappings.TryGetValue(parameter.Name, out var dictMappings))
+            {
+                foreach (var mapping in dictMappings)
+                {
+                    if (string.IsNullOrWhiteSpace(mapping.To)) // "To" is the dictionary key
+                        continue;
+
+                    string? dictValue = null;
+
+                    if (!string.IsNullOrWhiteSpace(mapping.From))
+                    {
+                        var result = ScribanHelpers.GetScribanObject(
+                            mapping.From,
+                            inputPayload,
+                            SharedExecutionContext ?? new(),
+                            parameter.ParameterType);
+
+                        dictValue = result?.ToString();
+                    }
+
+                    dictionary[mapping.To] = dictValue ?? string.Empty;
+                }
+            }
+
+            return dictionary;
+        }
+
+        public object? CreateScribanParameterValue(
+            ParameterInfo parameter,
+            Dictionary<string, string?> methodParameterNameToValueMap,
+            JsonObject inputPayload)
+        {
+            return CreateScribanParameterValue(
+                parameter.ParameterType,
+                parameter.Name!,
+                methodParameterNameToValueMap,
+                inputPayload
+            );
+        }
+
+        public object? CreateScribanParameterValue(
+            Type paramType,
+            string paramName,
+            Dictionary<string, string?> methodParameterNameToValueMap,
+            JsonObject inputPayload)
+        {
+            methodParameterNameToValueMap.TryGetValue(paramName, out var value);
+
+            return ScribanHelpers.GetScribanObject(
+                value,
+                inputPayload,
+                SharedExecutionContext ?? new(),
+                paramType);
+        }
+
+        #endregion
+
+        #region IDisposable
 
         public void Dispose()
         {
@@ -633,7 +807,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             if (disposing)
             {
-                _executionSemaphore?.Dispose();
+                _executionSemaphore.Dispose();
 
                 // Clear event handlers to prevent memory leaks
                 OnStartExecuting = null;
@@ -643,12 +817,14 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
             _disposed = true;
         }
+
+        #endregion
     }
 
     public class PathMapEntry
     {
         public string From { get; set; } = string.Empty;
         public string To { get; set; } = string.Empty;
-        public bool ExposeAsWorkflowOutput { get; set; } = false;
+        public bool ExposeAsWorkflowOutput { get; set; }
     }
 }

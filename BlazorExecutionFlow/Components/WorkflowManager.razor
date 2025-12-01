@@ -159,6 +159,12 @@
             <div class="detail-meta">
                 <span><i class="bi bi-calendar"></i> Created @SelectedWorkflow.CreatedAt.ToString("MMM d, yyyy")</span>
                 <span><i class="bi bi-clock"></i> Modified @SelectedWorkflow.ModifiedAt.ToString("MMM d, yyyy 'at' h:mm tt")</span>
+                <label class="checkbox-label">
+                    <input type="checkbox"
+                           checked="@SelectedWorkflow.IncludeAsNode"
+                           @onchange="@(e => HandleIncludeAsNodeChange(e.Value))" />
+                    <span>Include as node in editor</span>
+                </label>
             </div>
 
             <div class="detail-body">
@@ -204,7 +210,6 @@
                                         }
                                     </div>
                                     <input type="text"
-                                           style="margin-left: 10px;"
                                            value="@displayValue"
                                            @oninput="@(e => HandleInputValueChange(inputName, e.Value?.ToString() ?? string.Empty))"
                                            placeholder="@(hasValue ? "" : "Enter value...")" />
@@ -225,8 +230,8 @@
                                     <div class="param-row input-unused">
                                         <div class="param-key">
                                             <input type="text"
-                                                   class="input-name-input"
-                                                   value="@inputName"
+                                                    class="input-name-input"
+                                                    value="@inputName"
                                                    @onchange="@(e => HandleInputNameChange(inputName, e.Value?.ToString() ?? string.Empty, isRequired: false))"
                                                    placeholder="Input name..." />
                                             <span class="input-badge unused">Unused</span>
@@ -236,7 +241,8 @@
                                         </div>
                                         <input type="text"
                                                value="@value"
-                                               @oninput="@(e => HandleInputValueChange(inputName, e.Value?.ToString() ?? string.Empty))" />
+                                                style="margin-left: 10px;"
+                                                @oninput="@(e => HandleInputValueChange(inputName, e.Value?.ToString() ?? string.Empty))" />
                                     </div>
                                 }
                             }
@@ -638,5 +644,13 @@
         isEditingWorkflowName = false;
         editingWorkflowName = string.Empty;
         StateHasChanged();
+    }
+
+    private async Task HandleIncludeAsNodeChange(object? value)
+    {
+        if (SelectedWorkflow == null || value == null) return;
+
+        SelectedWorkflow.IncludeAsNode = (bool)value;
+        await OnUpdateWorkflow.InvokeAsync(SelectedWorkflow);
     }
 }

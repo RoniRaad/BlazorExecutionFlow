@@ -46,15 +46,6 @@ namespace BlazorExecutionFlow.Helpers
             var context = new TemplateContext();
             context.PushGlobal(scriptObject);
 
-            if (parameterType == typeof(string) &&
-                value is not null &&
-                !value.StartsWith("\"") &&
-                !value.EndsWith("\"") &&
-                !value.Contains("{{"))
-            {
-                value = $"\"{value}\"";
-            }
-
             var template = Template.Parse(value);
             var result = template.Render(context);
 
@@ -74,9 +65,16 @@ namespace BlazorExecutionFlow.Helpers
                 // Fix arrays/objects rendered by Scriban without proper JSON quoting
                 // e.g., [a,b,c] should be ["a","b","c"]
                 result = EnsureValidJson(result);
+                try
+                {
+                    var parsedResult = ParseLiteral(result);
+                    return parsedResult.CoerceToType(parameterType);
+                }
+                catch
+                {
+                    return result;
+                }
 
-                var parsedResult = ParseLiteral(result);
-                return parsedResult.CoerceToType(parameterType);
             }
         }
 

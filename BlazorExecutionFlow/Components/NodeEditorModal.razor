@@ -30,7 +30,7 @@ role="dialog"
         <div class="modal-content node-editor-content">
             <div class="modal-header node-editor-header">
                 <div>
-                    <h5 class="modal-title" id="nodeEditorLabel">Edit node: @(BackingNode?.BackingMethod?.Name ?? "Unknown")</h5>
+                    <h5 class="modal-title" id="nodeEditorLabel">Edit node: @(BackingNode?.Name ?? "Unknown")</h5>
                 </div>
                 <button type="button"
                 class="btn-execute-flow"
@@ -1297,8 +1297,17 @@ role="dialog"
 
                 for (int i = 0; i < properties.Count; i++)
                 {
+                    string propPath;
                     var kvp = properties[i];
-                    var propPath = string.IsNullOrEmpty(path) ? kvp.Key : $"{path}.{kvp.Key}";
+
+                    if (kvp.Key.Contains("-"))
+                    {
+                        propPath = string.IsNullOrEmpty(path) ? kvp.Key : $"{path}[\"{kvp.Key}\"]";
+                    }
+                    else
+                    {
+                        propPath = string.IsNullOrEmpty(path) ? kvp.Key : $"{path}.{kvp.Key}";
+                    }
 
                     if (!isCompact)
                     {

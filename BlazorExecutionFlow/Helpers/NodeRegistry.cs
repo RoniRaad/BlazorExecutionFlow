@@ -92,10 +92,11 @@ namespace BlazorExecutionFlow.Helpers
         {
             var types = new HashSet<Type>();
 
+            types.Add(typeof(CoreNodes));
+
             // Add default built-in node types if enabled
             if (_includeDefaultNodes)
             {
-                types.Add(typeof(CoreNodes));
                 types.Add(typeof(HttpNodes));
                 types.Add(typeof(BaseNodeCollection));
                 types.Add(typeof(CollectionNodes));

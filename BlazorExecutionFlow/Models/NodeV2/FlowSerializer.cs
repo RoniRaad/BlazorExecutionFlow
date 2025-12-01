@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using BlazorExecutionFlow.Helpers;
+using BlazorExecutionFlow.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BlazorExecutionFlow.Models.NodeV2
 {
@@ -57,7 +59,9 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     OutputPortConnections = node.OutputPorts.ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value.Select(n => nodeIdMap[n]).ToList()
-                    )
+                    ),
+                    ParentWorkflowId = node.ParentWorkflowId,
+                    NameOverride = node.NameOverride
                 };
 
                 serializableNodes.Add(serializableNode);
@@ -123,7 +127,9 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     Input = serNode.Input,
                     Result = serNode.Result,
                     MergeOutputWithInput = serNode.MergeOutputWithInput,
-                    DeclaredOutputPorts = serNode.DeclaredOutputPorts ?? new List<string>()
+                    DeclaredOutputPorts = serNode.DeclaredOutputPorts ?? new List<string>(),
+                    ParentWorkflowId = serNode.ParentWorkflowId,
+                    NameOverride = serNode.NameOverride
                 };
 
                 nodes.Add(node);
@@ -253,6 +259,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public List<string> InputNodeIds { get; set; } = new();
         public List<string> OutputNodeIds { get; set; } = new();
         public Dictionary<string, List<string>> OutputPortConnections { get; set; } = new();
+        public string? ParentWorkflowId { get; set; }
+        public string? NameOverride { get; set; }
     }
 
     /// <summary>
