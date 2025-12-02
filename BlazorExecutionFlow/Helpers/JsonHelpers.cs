@@ -3,13 +3,12 @@ using System.Text.Json.Nodes;
 
 namespace BlazorExecutionFlow.Helpers
 {
-
     public static class JsonHelpers
     {
         /// <summary>
         /// Walks the JsonNode tree and, for any string value that contains valid JSON,
         /// replaces that string with its parsed JSON representation.
-        /// 
+        ///
         /// This mutates the input node.
         /// </summary>
         public static void ExpandEmbeddedJson(this JsonNode? node)
@@ -20,7 +19,7 @@ namespace BlazorExecutionFlow.Helpers
             switch (node)
             {
                 case JsonObject obj:
-                    // Copy to a temporary list so we can safely modify while iterating
+                    // Copy to a list so we can safely modify while iterating
                     foreach (var kvp in obj.ToList())
                     {
                         var key = kvp.Key;
@@ -28,9 +27,7 @@ namespace BlazorExecutionFlow.Helpers
 
                         if (TryConvertStringNodeToJson(child, out var converted))
                         {
-                            // Replace property with parsed JSON
                             obj[key] = converted;
-                            // Also recurse into the newly parsed value
                             ExpandEmbeddedJson(converted);
                         }
                         else
@@ -58,14 +55,14 @@ namespace BlazorExecutionFlow.Helpers
                     break;
 
                 default:
-                    // JsonValue (non-string) – nothing to do
+                    // JsonValue or other – handled in TryConvertStringNodeToJson if needed
                     break;
             }
         }
 
         /// <summary>
-        /// If the node is a JsonValue<string> that contains valid JSON,
-        /// parses it and returns the parsed node.
+        /// If the node represents a string (either as a plain string or as a JsonElement with ValueKind = String)
+        /// and that string contains valid JSON, parse it into a JsonNode.
         /// </summary>
         private static bool TryConvertStringNodeToJson(JsonNode? node, out JsonNode? parsed)
         {
@@ -74,20 +71,30 @@ namespace BlazorExecutionFlow.Helpers
             if (node is not JsonValue value)
                 return false;
 
-            if (!value.TryGetValue<string>(out var str))
-                return false;
+            string? str = null;
+
+            // Case 1: Underlying type is actually string
+            if (value.TryGetValue<string>(out var directString))
+            {
+                str = directString;
+            }
+            else if (value.TryGetValue<JsonElement>(out var element) &&
+                     element.ValueKind == JsonValueKind.String)
+            {
+                // Case 2: Underlying type is JsonElement (common when created via JsonNode.Parse)
+                str = element.GetString();
+            }
 
             if (string.IsNullOrWhiteSpace(str))
                 return false;
 
             try
             {
-                // Optional: if you *only* want to parse complex JSON (objects/arrays),
-                // you can gate this by checking the first non-whitespace char:
-                //
-                // char c = str.TrimStart()[0];
-                // if (c != '{' && c != '[') return false;
-                //
+                // Optional gate: uncomment if you only want to parse JSON-looking strings.
+                // var trimmed = str.TrimStart();
+                // if (trimmed.Length == 0 || (trimmed[0] != '{' && trimmed[0] != '['))
+                //     return false;
+
                 parsed = JsonNode.Parse(str);
                 return parsed is not null;
             }
@@ -98,4 +105,5 @@ namespace BlazorExecutionFlow.Helpers
             }
         }
     }
+
 }

@@ -587,8 +587,6 @@ namespace BlazorExecutionFlow.Models.NodeV2
                     value = fullResponseAsNode?.DeepClone().GetByPath($"{methodOutputMap.From}");
                 }
 
-                value.ExpandEmbeddedJson();
-
                 resultObject.SetByPath($"output.{methodOutputMap.To}", value);
 
                 SharedExecutionContext?.SharedContext.SetByPath(
@@ -655,6 +653,8 @@ namespace BlazorExecutionFlow.Models.NodeV2
                 HandleMethodResponse(methodInvocationResponse, actualReturnType, resultObject);
             }
 
+            SharedExecutionContext?.SharedContext.ExpandEmbeddedJson();
+            resultObject.ExpandEmbeddedJson();
             return resultObject;
         }
 
