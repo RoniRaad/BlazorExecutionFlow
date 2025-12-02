@@ -494,6 +494,121 @@ namespace BlazorExecutionFlow.Models.NodeV2
 
         #region Backing Method Invocation / Parameters
 
+        private void HandleCuratedTypes(object methodInvocationResponse, 
+            IEnumerable<(string? Type, string? Name)> curatedProperties, 
+            JsonObject resultObject)
+        {
+            // For types with curated properties (like DateTime), extract properties using reflection
+            var methodOutputJsonObject = new JsonObject();
+            var responseType = methodInvocationResponse.GetType();
+
+            foreach (var prop in curatedProperties)
+            {
+                if (prop.Name != null)
+                {
+                    var propertyInfo = responseType.GetProperty(prop.Name);
+                    if (propertyInfo != null)
+                    {
+                        var propertyValue = propertyInfo.GetValue(methodInvocationResponse);
+                        methodOutputJsonObject[prop.Name] = JsonSerializer.SerializeToNode(propertyValue);
+                    }
+                }
+            }
+
+            // Map curated properties to outputs
+            foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
+            {
+                var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
+                resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
+
+                SharedExecutionContext?.SharedContext.SetByPath(
+                    $"nodes.node_{DrawflowNodeId}.output",
+                    methodOutputValue?.DeepClone());
+
+                SharedExecutionContext?.SharedContext.SetByPath(
+                    $"nodes.node_{DrawflowNodeId}.name",
+                    BackingMethod.Name);
+
+                // Also expose to workflow.output.* if flagged
+                if (methodOutputMap.ExposeAsWorkflowOutput)
+                {
+                    SharedExecutionContext?.SharedContext.SetByPath(
+                        $"workflow.output.{methodOutputMap.To}",
+                        methodOutputValue?.DeepClone());
+                }
+            }
+        }
+
+        private void HandleMethodResponse(object? methodInvocationResponse, 
+            Type? actualReturnType, JsonObject resultObject)
+        {
+            // Standard serialization for other types
+            var fullResponseAsNode = JsonSerializer.SerializeToNode(methodInvocationResponse);
+
+            // If the response is a string that contains valid JSON, parse it
+            // This allows string results (like HTTP responses) to be indexed like JSON
+            if (fullResponseAsNode is JsonValue jsonValue &&
+                jsonValue.GetValueKind() == JsonValueKind.String)
+            {
+                var stringValue = jsonValue.GetValue<string>();
+                if (!string.IsNullOrWhiteSpace(stringValue))
+                {
+                    try
+                    {
+                        // Try to parse the string as JSON
+                        var parsed = JsonNode.Parse(stringValue);
+                        if (parsed != null)
+                        {
+                            fullResponseAsNode = parsed;
+                        }
+                    }
+                    catch
+                    {
+                        // Not valid JSON, keep as string
+                    }
+                }
+            }
+
+            bool isDataModelType = !TypeHelpers.ShouldTreatAsSingleValue(actualReturnType);
+
+            bool isSingleValueType =
+                !isDataModelType &&
+                fullResponseAsNode is not JsonObject;
+
+            foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
+            {
+                JsonNode? value;
+                if (isSingleValueType)
+                {
+                    value = fullResponseAsNode?.DeepClone();
+                }
+                else
+                {
+                    value = fullResponseAsNode?.DeepClone().GetByPath($"{methodOutputMap.From}");
+                }
+
+                value.ExpandEmbeddedJson();
+
+                resultObject.SetByPath($"output.{methodOutputMap.To}", value);
+
+                SharedExecutionContext?.SharedContext.SetByPath(
+                    $"nodes.node_{DrawflowNodeId}.output",
+                    value);
+
+                SharedExecutionContext?.SharedContext.SetByPath(
+                    $"nodes.node_{DrawflowNodeId}.name",
+                    BackingMethod.Name);
+
+                // Also expose to workflow.output.* if flagged
+                if (methodOutputMap.ExposeAsWorkflowOutput)
+                {
+                    SharedExecutionContext?.SharedContext.SetByPath(
+                        $"workflow.output.{methodOutputMap.To}",
+                        value);
+                }
+            }
+        }
+
         private async Task<JsonObject> InvokeBackingMethod(object[] filledMethodParameters)
         {
             if (BackingMethod == null)
@@ -533,132 +648,11 @@ namespace BlazorExecutionFlow.Models.NodeV2
             var curatedProperties = TypeHelpers.GetCuratedProperties(actualReturnType);
             if (curatedProperties != null && methodInvocationResponse != null)
             {
-                // For types with curated properties (like DateTime), extract properties using reflection
-                var methodOutputJsonObject = new JsonObject();
-                var responseType = methodInvocationResponse.GetType();
-
-                foreach (var prop in curatedProperties)
-                {
-                    if (prop.Name != null)
-                    {
-                        var propertyInfo = responseType.GetProperty(prop.Name);
-                        if (propertyInfo != null)
-                        {
-                            var propertyValue = propertyInfo.GetValue(methodInvocationResponse);
-                            methodOutputJsonObject[prop.Name] = JsonSerializer.SerializeToNode(propertyValue);
-                        }
-                    }
-                }
-
-                // Map curated properties to outputs
-                foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
-                {
-                    var methodOutputValue = methodOutputJsonObject.GetByPath(methodOutputMap.From);
-                    resultObject.SetByPath($"output.{methodOutputMap.To}", methodOutputValue);
-
-                    SharedExecutionContext?.SharedContext.SetByPath(
-                        $"nodes.node_{DrawflowNodeId}.output",
-                        methodOutputValue?.DeepClone());
-
-                    SharedExecutionContext?.SharedContext.SetByPath(
-                        $"nodes.node_{DrawflowNodeId}.name",
-                        BackingMethod.Name);
-
-                    // Also expose to workflow.output.* if flagged
-                    if (methodOutputMap.ExposeAsWorkflowOutput)
-                    {
-                        SharedExecutionContext?.SharedContext.SetByPath(
-                            $"workflow.output.{methodOutputMap.To}",
-                            methodOutputValue?.DeepClone());
-                    }
-                }
+                HandleCuratedTypes(methodInvocationResponse, curatedProperties, resultObject);
             }
             else
             {
-                // Standard serialization for other types
-                var serializedResponse = JsonSerializer.SerializeToNode(methodInvocationResponse);
-
-                // If the response is a string that contains valid JSON, parse it
-                // This allows string results (like HTTP responses) to be indexed like JSON
-                if (serializedResponse is JsonValue jsonValue &&
-                    jsonValue.GetValueKind() == JsonValueKind.String)
-                {
-                    var stringValue = jsonValue.GetValue<string>();
-                    if (!string.IsNullOrWhiteSpace(stringValue))
-                    {
-                        try
-                        {
-                            // Try to parse the string as JSON
-                            var parsed = JsonNode.Parse(stringValue);
-                            if (parsed != null)
-                            {
-                                serializedResponse = parsed;
-                            }
-                        }
-                        catch
-                        {
-                            // Not valid JSON, keep as string
-                        }
-                    }
-                }
-
-                // Check if this is a single-value type (like JsonObject, arrays, primitives)
-                // For these, we want to map the entire value to "result", not extract properties
-                // However, if we've parsed a JSON string into an object, treat it as a complex object
-                bool isSingleValueType =
-                    TypeHelpers.ShouldTreatAsSingleValue(actualReturnType) &&
-                    serializedResponse is not JsonObject;
-
-                if (serializedResponse is not JsonObject methodOutputJsonObject || isSingleValueType)
-                {
-                    // Either not a JsonObject, or is a single-value type
-                    // Map the entire serialized response to the output
-                    foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
-                    {
-                        resultObject.SetByPath($"output.{methodOutputMap.To}", serializedResponse);
-
-                        SharedExecutionContext?.SharedContext.SetByPath(
-                            $"nodes.node_{DrawflowNodeId}.output",
-                            serializedResponse?.DeepClone());
-
-                        SharedExecutionContext?.SharedContext.SetByPath(
-                            $"nodes.node_{DrawflowNodeId}.name",
-                            BackingMethod.Name);
-
-                        // Also expose to workflow.output.* if flagged
-                        if (methodOutputMap.ExposeAsWorkflowOutput)
-                        {
-                            SharedExecutionContext?.SharedContext.SetByPath(
-                                $"workflow.output.{methodOutputMap.To}",
-                                serializedResponse?.DeepClone());
-                        }
-                    }
-                }
-                else
-                {
-                    // Complex object - expose entire object to mapped outputs
-                    foreach (var methodOutputMap in MethodOutputToNodeOutputMap)
-                    {
-                        var value = methodOutputJsonObject?.DeepClone().GetByPath($"{methodOutputMap.From}");
-                        resultObject.SetByPath($"output.{methodOutputMap.To}", value);
-
-                        SharedExecutionContext?.SharedContext.SetByPath(
-                            $"nodes.node_{DrawflowNodeId}.output",
-                            value);
-
-                        SharedExecutionContext?.SharedContext.SetByPath(
-                            $"nodes.node_{DrawflowNodeId}.name",
-                            BackingMethod.Name);
-
-                        // Also expose to workflow.output.* if flagged
-                        if (methodOutputMap.ExposeAsWorkflowOutput)
-                        {
-                            SharedExecutionContext?.SharedContext.SetByPath(
-                                $"workflow.output.{methodOutputMap.To}",
-                                value);
-                        }
-                    }
-                }
+                HandleMethodResponse(methodInvocationResponse, actualReturnType, resultObject);
             }
 
             return resultObject;
