@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using BlazorExecutionFlow.Flow.Attributes;
 using BlazorExecutionFlow.Models;
 
@@ -119,7 +114,8 @@ namespace BlazorExecutionFlow.Flow.BaseNodes
                 return new HttpResponse
                 {
                     StatusCode = (int)response.StatusCode,
-                    Success = response.IsSuccessStatusCode
+                    Success = response.IsSuccessStatusCode,
+                    Body = responseBody
                 };
             }
             catch (Exception ex)
