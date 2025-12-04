@@ -29,6 +29,15 @@ role="dialog"
     <div class="modal-dialog node-editor-dialog">
         <div class="modal-content node-editor-content">
             <div class="modal-header node-editor-header">
+                <button type="button"
+                        class="btn-close-modal"
+                        @onclick="HandleClose"
+                        title="Close modal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
                 <div class="node-title-container">
                     @if (_isEditingNodeName)
                     {
@@ -43,9 +52,11 @@ role="dialog"
                     }
                     else
                     {
-                        <div class="node-name-display" @onclick="StartEditingNodeName">
-                            <h5 class="modal-title" id="nodeEditorLabel">@(BackingNode?.NameOverride ?? BackingNode?.Name ?? "Unknown")</h5>
-                            <button type="button" class="btn-edit-node-name" title="Edit node name">
+                        <div class="node-name-display">
+                            <h5 class="modal-title" id="nodeEditorLabel" @onclick="StartEditingNodeName">
+                                @(BackingNode?.NameOverride ?? BackingNode?.Name ?? "Unknown")
+                            </h5>
+                            <button type="button" class="btn-edit-node-name" @onclick="StartEditingNodeName" title="Edit node name">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -54,7 +65,7 @@ role="dialog"
                         </div>
                         @if (!string.IsNullOrEmpty(BackingNode?.NameOverride))
                         {
-                            <p class="node-type-subtitle">Type: @(BackingNode?.Name ?? "Unknown")</p>
+                            <p class="node-type-subtitle">Type: @(BackingNode?.BackingMethod?.Name ?? BackingNode?.Name ?? "Unknown")</p>
                         }
                     }
                 </div>
@@ -1477,17 +1488,21 @@ role="dialog"
 
     private void SaveNodeName()
     {
-        if (BackingNode != null && !string.IsNullOrWhiteSpace(_editingNodeName))
+        if (BackingNode != null)
         {
-            // Only set NameOverride if it's different from the backing name
-            if (_editingNodeName.Trim() != BackingNode.Name)
+            if (!string.IsNullOrWhiteSpace(_editingNodeName))
             {
-                BackingNode.NameOverride = _editingNodeName.Trim();
+                // Only set NameOverride if it's different from the backing name
+                if (_editingNodeName.Trim() != BackingNode.BackingMethod.Name)
+                {
+                    BackingNode.NameOverride = _editingNodeName.Trim();
+                }
+                else
+                {
+                    BackingNode.NameOverride = null;
+                }
             }
-            else
-            {
-                BackingNode.NameOverride = null;
-            }
+            // If empty, keep the existing override (don't clear it)
         }
         _isEditingNodeName = false;
         StateHasChanged();
