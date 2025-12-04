@@ -65,7 +65,7 @@ role="dialog"
                         </div>
                         @if (!string.IsNullOrEmpty(BackingNode?.NameOverride))
                         {
-                            <p class="node-type-subtitle">Type: @(BackingNode?.BackingMethod?.Name ?? BackingNode?.Name ?? "Unknown")</p>
+                            <p class="node-type-subtitle">Type: @(TypeHelpers.AddSpacesToPascalCase(BackingNode?.BackingMethod?.Name) ?? BackingNode?.Name ?? "Unknown")</p>
                         }
                     }
                 </div>
@@ -553,13 +553,6 @@ role="dialog"
         }
 
         return false;
-    }
-
-    private bool IsBooleanOutputName(string name)
-    {
-        return name == "success" || name == "valid" || name == "isvalid" ||
-               name == "enabled" || name == "active" || name == "flag" ||
-               name == "condition" || name.StartsWith("is") || name.StartsWith("has");
     }
 
     /// <summary>

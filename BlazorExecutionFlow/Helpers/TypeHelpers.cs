@@ -282,7 +282,7 @@ namespace BlazorExecutionFlow.Helpers
         /// Adds spaces between PascalCase words.
         /// Example: "ContainsString" -> "Contains String", "ForEachString" -> "For Each String"
         /// </summary>
-        public static string AddSpacesToPascalCase(string text)
+        public static string? AddSpacesToPascalCase(string? text)
         {
             if (string.IsNullOrEmpty(text))
                 return text;

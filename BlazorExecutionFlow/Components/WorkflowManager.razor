@@ -385,7 +385,9 @@
     private string activeTab = "workflows";
     private string selectedEnvironment = "Development";
 
-    private List<WorkflowInfo> Workflows => WorkflowService.GetAllWorkflows();
+    // Cache workflows to prevent losing changes when properties are accessed
+    private List<WorkflowInfo> _workflowsCache = new();
+    private List<WorkflowInfo> Workflows => _workflowsCache;
     private Dictionary<string, string> EnvironmentVariables => EnvVarService.GetAllVariables(selectedEnvironment);
     private List<string> Environments => EnvVarService.GetAllEnvironments();
     private string SelectedEnvironment => selectedEnvironment;
@@ -409,6 +411,9 @@
 
     protected override void OnInitialized()
     {
+        // Load workflows into cache
+        RefreshWorkflowsCache();
+
         // Ensure there's a default environment
         if (!Environments.Any())
         {
@@ -425,6 +430,11 @@
         {
             selectedWorkflowId = Workflows.OrderByDescending(w => w.ModifiedAt).First().Id;
         }
+    }
+
+    private void RefreshWorkflowsCache()
+    {
+        _workflowsCache = WorkflowService.GetAllWorkflows();
     }
 
     private void SelectWorkflow(string workflowId)
@@ -448,6 +458,7 @@
         };
 
         WorkflowService.AddWorkflow(newWorkflow);
+        _workflowsCache.Add(newWorkflow);
         selectedWorkflowId = newWorkflow.Id;
         StateHasChanged();
     }
@@ -457,6 +468,11 @@
         if (selectedWorkflowId != null)
         {
             WorkflowService.DeleteWorkflow(selectedWorkflowId);
+            var workflowToRemove = _workflowsCache.FirstOrDefault(w => w.Id == selectedWorkflowId);
+            if (workflowToRemove != null)
+            {
+                _workflowsCache.Remove(workflowToRemove);
+            }
             selectedWorkflowId = null;
             StateHasChanged();
         }

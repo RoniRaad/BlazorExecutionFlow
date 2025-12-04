@@ -140,7 +140,6 @@
     display: flex;
     align-items: center;
     position: relative;
-    padding-right: 1.75rem;
 }
 
 .node-title-container .modal-title {
@@ -171,6 +170,7 @@
     height: 1.25rem;
     position: absolute;
     right: 0;
+    right: -12px;
 }
 
 .btn-edit-node-name:hover {
@@ -226,7 +226,7 @@
 
 .node-editor-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
     gap: 2px;
     height: 100%;
 }
@@ -455,8 +455,8 @@
     white-space: pre-wrap !important;
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
-    min-height: 2rem;
-    font-size: 0.8125rem !important;
+    min-height: 1.5rem;
+    font-size: 0.7125rem !important;
 }
 
 .mapping-input:hover {
@@ -472,7 +472,7 @@
 /* Textarea-specific styling for auto-growing */
 textarea.mapping-input {
     resize: vertical;
-    min-height: 2.2rem;
+    min-height: 1.75rem;
     max-height: 10rem;
     font-family: inherit;
     overflow-y: auto;
@@ -657,7 +657,7 @@ textarea.mapping-input {
 
 .node-editor-footer {
     border-top: 1px solid rgba(31, 41, 55, 0.9);
-    padding: 0.7rem 1.25rem;
+    padding: 0.5rem 1.25rem;
 }
 
 .node-editor-footer .btn {
@@ -816,7 +816,6 @@ textarea.mapping-input {
 }
 
 .droppable-input {
-    transition: all var(--transition-fast);
 }
 
 .droppable-input:focus {
@@ -1584,22 +1583,23 @@ textarea.mapping-input {
     background: rgba(59, 130, 246, 0.15);
     border: 1px solid rgba(59, 130, 246, 0.3);
     color: #bfdbfe;
-    padding: 0.25rem 0.5rem;
+    padding: 0.15rem 0.55rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 0.875rem;
     transition: all var(--transition-fast);
     z-index: 1;
+    transform: scale(.80);
 }
 
 .btn-preview:hover {
     background: rgba(59, 130, 246, 0.25);
     border-color: rgba(59, 130, 246, 0.5);
-    transform: scale(1.05);
+    transform: scale(.90);
 }
 
 .btn-preview:active {
-    transform: scale(0.95);
+    transform: scale(0.90);
 }
 
 /* Preview Button Container */
