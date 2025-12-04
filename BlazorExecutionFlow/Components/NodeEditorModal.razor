@@ -192,14 +192,14 @@ role="dialog"
                                                     <button type="button"
                                                             class="btn-preview"
                                                             style="background-color: transparent;border: transparent;color: white;"
-                                                            @ref="_previewButtonRef"
-                                                            @onclick="@(() => TogglePreview(inputMapping))"
+                                                            @onclick="@((e) => TogglePreview(inputMapping, e))"
+                                                            @onclick:stopPropagation="true"
                                                             title="Toggle preview">
                                                         👁
                                                     </button>
                                                     @if (_previewMapping == inputMapping)
                                                     {
-                                                        <div class="preview-popover" @ref="_previewPopoverRef">
+                                                        <div class="preview-popover">
                                                             <div class="preview-popover-arrow"></div>
                                                             <div class="preview-popover-content">
                                                                 <div class="preview-popover-label">Preview</div>
@@ -997,26 +997,48 @@ role="dialog"
     }
 
     // Preview methods
-    private async Task TogglePreview(PathMapEntry mapping)
+    private void TogglePreview(PathMapEntry mapping, MouseEventArgs e)
     {
+        // If clicking the same mapping, just close it
         if (_previewMapping == mapping)
         {
             _previewMapping = null;
-            await RemoveClickAwayListener();
+            return;
         }
-        else
+
+        // Check if we have valid data to preview
+        if (string.IsNullOrWhiteSpace(mapping.From) || IncomingPayloadJson is null)
         {
-            _previewMapping = mapping;
+            // Don't show preview if there's no template or no incoming payload
+            _previewMapping = null;
+            return;
+        }
 
-            // Wait for the popover to render
-            await InvokeAsync(StateHasChanged);
-            await Task.Delay(10);
+        // Set the new preview mapping - this will show the popover
+        _previewMapping = mapping;
+    }
 
-            // Position the popover using JavaScript
-            await PositionPopover();
+    private async Task PositionPopoverByElement()
+    {
+        if (_previewPopoverRef.Id == null)
+        {
+            Console.WriteLine("Popover element reference is null");
+            return;
+        }
 
-            // Set up click-away listener
-            await SetupClickAwayListener();
+        try
+        {
+            // Use JavaScript to find the button and position relative to it
+            var previewId = _previewMapping?.GetHashCode() ?? 0;
+            await JSRuntime.InvokeVoidAsync("positionPopoverById", previewId);
+        }
+        catch (JSException jsEx)
+        {
+            Console.WriteLine($"JS error positioning popover: {jsEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error positioning popover: {ex.Message}");
         }
     }
 
@@ -1024,11 +1046,18 @@ role="dialog"
     {
         try
         {
+            // Verify the popover element exists before trying to position it
             await JSRuntime.InvokeVoidAsync("positionPopover", _previewButtonRef, _previewPopoverRef);
         }
-        catch (Exception)
+        catch (JSException jsEx)
         {
-            // Ignore errors if JS isn't loaded yet
+            // Log JS errors but don't crash
+            Console.WriteLine($"JS error positioning popover: {jsEx.Message}");
+        }
+        catch (Exception ex)
+        {
+            // Ignore other errors (e.g., if JS isn't loaded yet or element not found)
+            Console.WriteLine($"Error positioning popover: {ex.Message}");
         }
     }
 
