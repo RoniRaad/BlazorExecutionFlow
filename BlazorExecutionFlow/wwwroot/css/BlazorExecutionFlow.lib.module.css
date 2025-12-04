@@ -1123,19 +1123,21 @@ textarea.mapping-input {
     background-color: var(--df-node);
     border-radius: var(--df-radius);
     border: 1px solid var(--df-border);
-    box-shadow: 0 10px 24px var(--df-shadow);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
     color: var(--df-text);
+    padding-bottom: 6px;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .drawflow .drawflow-node .drawflow_content_node,
 .drawflow-node .drawflow_content_node {
     display: block;
-    margin-top: 15px;
+    margin-top: 10px;
 }
 
 /* Inputs and Outputs */
 .drawflow-node .inputs {
-    padding-top: 13px;
+    padding-top: 8px;
 }
 
 .drawflow-node .outputs .computed_node .port_label {
@@ -1143,7 +1145,7 @@ textarea.mapping-input {
 }
 
 .drawflow-node .outputs {
-    padding-top: 13px;
+    padding-top: 8px;
 }
 
 /* Ports - color only */
@@ -1152,6 +1154,8 @@ textarea.mapping-input {
 .drawflow-node .input,
 .drawflow-node .output {
     background: var(--df-port);
+    transition: all 0.2s ease;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
 }
 
 .drawflow .drawflow-node .input:hover,
@@ -1159,9 +1163,11 @@ textarea.mapping-input {
 .drawflow-node .input:hover,
 .drawflow-node .output:hover {
     background: var(--df-port-hover);
+    transform: scale(1.15);
+    box-shadow: 0 0 0 3px rgba(110, 160, 255, 0.3);
 }
 
-/* Title Bar - fixed height 24px to match type box */
+/* Title Bar - compact design */
 .drawflow .title-container,
 .drawflow-node .title-container {
     position: absolute;
@@ -1169,10 +1175,12 @@ textarea.mapping-input {
     left: 0;
     z-index: 2;
     width: 100%;
-    height: 24px;
+    height: 28px;
     background: linear-gradient(90deg, var(--df-node-2), var(--df-node));
     border-radius: var(--df-radius) var(--df-radius) 0 0;
     box-shadow: 0 1px 0 rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
 }
 
 /* Multicolor gradient when selected */
@@ -1185,10 +1193,12 @@ textarea.mapping-input {
 .drawflow .title,
 .drawflow-node .title {
     color: var(--df-heading);
-    padding-left: 30px;
-    padding-right: 24px;
+    padding-left: 32px;
+    padding-right: 8px;
     white-space: nowrap;
-    line-height: 24px;
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
 }
 
 .drawflow .drawflow-node.selected .title,
@@ -1200,6 +1210,8 @@ textarea.mapping-input {
 .drawflow .drawflow-node.selected,
 .drawflow-node.selected {
     background: var(--df-node-2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 0 2px var(--df-accent);
+    transform: translateY(-1px);
 }
 
 /* Type Box - default: solid accent */
@@ -1209,8 +1221,8 @@ textarea.mapping-input {
     left: 0;
     background: var(--df-accent);
     z-index: 3;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border-radius: var(--df-radius) 0 var(--df-radius) 0;
     display: flex;
     align-items: center;
@@ -1226,7 +1238,7 @@ textarea.mapping-input {
 /* Type icon text - light for contrast */
 .node-type-id {
     text-align: center;
-    font-size: 16px;
+    font-size: 15px;
     color: var(--df-heading);
     margin: 0;
     text-shadow: 0 0 4px rgba(0,0,0,0.6);
@@ -1247,14 +1259,16 @@ textarea.mapping-input {
 .drawflow .drawflow-node .port_type,
 .drawflow-node .port_type {
     color: var(--df-text-weak) !important;
-    font-size: 10px !important;
+    font-size: 9px !important;
     font-weight: 500;
+    letter-spacing: 0.02em;
 }
 
 .drawflow .drawflow-node .port_label,
 .drawflow-node .port_label {
     color: var(--df-text-muted);
-    font-size: 12px;
+    font-size: 11px;
+    font-weight: 500;
 }
 
 /* Wires */
@@ -1262,6 +1276,8 @@ textarea.mapping-input {
 .connection .main-path {
     stroke: var(--df-wire);
     stroke-width: 2;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, stroke-width 0.2s ease;
 }
 
 .drawflow .connection.selected .main-path,
@@ -1269,6 +1285,14 @@ textarea.mapping-input {
 .connection.selected .main-path,
 .connection .main-path.selected {
     stroke: var(--df-wire-active);
+    opacity: 1;
+    stroke-width: 2.5;
+}
+
+.drawflow .connection:hover .main-path,
+.connection:hover .main-path {
+    opacity: 0.9;
+    stroke-width: 2.5;
 }
 
 /* Node Error State in Canvas */
