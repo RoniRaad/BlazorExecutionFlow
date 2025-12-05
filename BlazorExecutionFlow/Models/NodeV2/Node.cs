@@ -47,7 +47,7 @@ namespace BlazorExecutionFlow.Models.NodeV2
         public required MethodInfo BackingMethod { get; set; }
 
         [JsonIgnore]
-        public string Name => NameOverride ?? BackingMethod.Name;
+        public string Name => NameOverride ?? TypeHelpers.AddSpacesToPascalCase(BackingMethod.Name);
 
         public bool IsWorkflowNode =>
             BackingMethod.Name == nameof(WorkflowHelpers.ExecuteWorkflow)

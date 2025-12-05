@@ -27,8 +27,11 @@ namespace BlazorExecutionFlow.Helpers
             {
                 if (prop.Name != null)
                 {
-                    // Apply smart mapping based on property name and type
-                    var targetName = GetSmartOutputTarget(prop.Name, prop.Type, returnType);
+                    string targetName = TypeHelpers.ToCamelCase(prop.Name);
+                    if (returnProps.Count == 1)
+                    {
+                        targetName = GetSmartOutputTarget(prop.Name, prop.Type, returnType);
+                    }
 
                     mappings.Add(new PathMapEntry
                     {
