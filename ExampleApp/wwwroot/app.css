@@ -1,24 +1,5 @@
 /* Global CSS Variables */
 :root {
-    /* Application-specific variables for ExampleApp pages */
-    --primary-color: #6366f1;
-    --primary-hover: #7c3aed;
-    --primary-light: #818cf8;
-    --secondary-color: #06b6d4;
-    --background: #192138;
-    --surface: #1f2937;
-    --surface-elevated: #2d3748;
-    --border-color: #374151;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    --radius: 8px;
-    --radius-lg: 12px;
-
-    /* Override BlazorExecutionFlow library theme (optional) */
-    /* These --bef-* variables customize the appearance of library components */
     --bef-primary-color: #6366f1;
     --bef-primary-hover: #7c3aed;
     --bef-primary-light: #818cf8;

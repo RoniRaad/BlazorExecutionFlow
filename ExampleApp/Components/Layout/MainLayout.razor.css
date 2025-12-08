@@ -12,7 +12,7 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     height: 100%;
     background: var(--bef-background);
-    color: var(--bef--text-primary, #f1f5f9);
+    color: var(--bef--bef-text-primary, #f1f5f9);
     font-size: 14px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -29,13 +29,13 @@
 
 /* Header */
 .app-header {
-    background: var(--surface, #1e293b);
-    border-bottom: 1px solid var(--border-color);
+    background: var(--bef-surface, #1e293b);
+    border-bottom: 1px solid var(--bef-border-color);
     padding: 1rem 2rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--bef-shadow-sm);
     z-index: 100;
 }
 
@@ -48,21 +48,21 @@
 .brand-logo {
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-    border-radius: var(--radius);
+    background: linear-gradient(135deg, var(--bef-primary-color), var(--bef-secondary-color));
+    border-radius: var(--bef-radius);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
     font-weight: 700;
     font-size: 18px;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--bef-shadow-md);
 }
 
 .brand-title {
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--bef--text-primary, #f1f5f9);
+    color: var(--bef--bef-text-primary, #f1f5f9);
     letter-spacing: -0.025em;
 }
 
@@ -97,8 +97,8 @@
 
 /* Footer */
 .app-footer {
-    background: var(--surface, #1e293b);
-    border-top: 1px solid var(--border-color);
+    background: var(--bef-surface, #1e293b);
+    border-top: 1px solid var(--bef-border-color);
     padding: 1rem 2rem;
     flex-shrink: 0;
 }
@@ -117,25 +117,25 @@
 }
 
 .footer-divider {
-    color: var(--border-color);
+    color: var(--bef-border-color);
 }
 
 .footer-link {
-    color: var(--primary-color);
+    color: var(--bef-primary-color);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s ease;
 }
 
 .footer-link:hover {
-    color: var(--primary-hover);
+    color: var(--bef-primary-hover);
     text-decoration: underline;
 }
 
 /* Button Styles */
 .btn {
     padding: 0.5rem 1rem;
-    border-radius: var(--radius);
+    border-radius: var(--bef-radius);
     border: none;
     font-size: 0.875rem;
     font-weight: 500;
@@ -148,33 +148,33 @@
 }
 
 .btn-primary {
-    background: var(--primary-color);
+    background: var(--bef-primary-color);
     color: white;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--bef-shadow-sm);
 }
 
 .btn-primary:hover {
-    background: var(--primary-hover);
-    box-shadow: var(--shadow-md);
+    background: var(--bef-primary-hover);
+    box-shadow: var(--bef-shadow-md);
     transform: translateY(-1px);
 }
 
 .btn-secondary {
     background: transparent;
     color: var(--bef-text-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--bef-border-color);
 }
 
 .btn-secondary:hover {
     background: var(--bef-background);
-    color: var(--bef--text-primary, #f1f5f9);
+    color: var(--bef--bef-text-primary, #f1f5f9);
 }
 
 /* Error UI - Global styles using :global() */
 :global(#blazor-error-ui) {
     background: linear-gradient(90deg, #7c2d12, #9a3412);
     bottom: 0;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--bef-shadow-lg);
     display: none;
     left: 0;
     padding: 1rem 1.5rem;
@@ -201,7 +201,7 @@
     padding: 0.25rem 0.75rem;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: var(--radius);
+    border-radius: var(--bef-radius);
     transition: all 0.2s ease;
 }
 
@@ -258,7 +258,7 @@
 }
 
 :global(.text-primary) {
-    color: var(--primary-color);
+    color: var(--bef-primary-color);
 }
 
 :global(.badge) {
@@ -268,9 +268,9 @@
     font-size: 0.75rem;
     font-weight: 600;
     border-radius: 9999px;
-    background: var(--surface-elevated);
+    background: var(--bef-surface-elevated);
     color: var(--bef-text-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--bef-border-color);
 }
 
 :global(.badge-primary) {

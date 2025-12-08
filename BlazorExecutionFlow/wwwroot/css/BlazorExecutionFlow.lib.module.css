@@ -58,16 +58,16 @@
     --transition-slow: 0.5s ease-in-out;
 
     /* Border Radius (legacy naming) */
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg-alt: 0.75rem;
-    --radius-xl: 1rem;
-    --radius-pill: 999px;
+    --bef-radius-sm: 0.375rem;
+    --bef-radius-md: 0.5rem;
+    --bef-radius-lg-alt: 0.75rem;
+    --bef-radius-xl: 1rem;
+    --bef-radius-pill: 999px;
 
     /* Shadows (legacy naming) */
-    --shadow-sm-alt: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md-alt: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg-alt: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --bef-shadow-sm-alt: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --bef-shadow-md-alt: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --bef-shadow-lg-alt: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.85);
 }
 
@@ -112,7 +112,7 @@
     align-items: center;
     justify-content: center;
     transition: all var(--transition-fast);
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     flex-shrink: 0;
 }
 
@@ -148,7 +148,7 @@
     letter-spacing: 0.02em;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     transition: background-color var(--transition-fast);
 }
 
@@ -189,7 +189,7 @@
     padding: 0.5rem 0.75rem;
     background: rgba(51, 65, 85, 0.4);
     border: 1px solid rgba(100, 116, 139, 0.6);
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     color: #f3f4f6;
     transition: border-color var(--transition-fast);
 }
@@ -535,7 +535,7 @@ textarea.mapping-input {
     color: #e5e7eb !important;
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
 }
 
 .json-search:focus {
@@ -559,7 +559,7 @@ textarea.mapping-input {
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
     cursor: pointer;
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
 }
 
 .json-filter:focus {
@@ -615,7 +615,7 @@ textarea.mapping-input {
     background: rgba(99, 102, 241, 0.1);
     color: var(--bef-primary-color);
     border: 1px solid rgba(99, 102, 241, 0.3);
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     cursor: pointer;
     transition: all var(--transition-fast);
 }
@@ -680,7 +680,7 @@ textarea.mapping-input {
     padding: 0.4rem 0.6rem;
     background: rgba(59, 130, 246, 0.08);
     border: 1px solid rgba(59, 130, 246, 0.25);
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     font-size: 0.75rem;
     transition: all var(--transition-fast);
 }
@@ -712,7 +712,7 @@ textarea.mapping-input {
     margin-top: 1rem;
     background: rgba(220, 38, 38, 0.15);
     border: 1px solid rgba(220, 38, 38, 0.5);
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     padding: 1rem;
     animation: slideDown var(--transition-normal);
 }
@@ -751,7 +751,7 @@ textarea.mapping-input {
     line-height: 1;
     cursor: pointer;
     padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     transition: all var(--transition-fast);
 }
 
@@ -790,7 +790,7 @@ textarea.mapping-input {
     padding: 0.75rem;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(220, 38, 38, 0.3);
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     color: #fca5a5;
     font-size: 0.75rem;
     max-height: 200px;
@@ -893,7 +893,7 @@ textarea.mapping-input {
 .export-modal {
     background: var(--color-bg-panel);
     border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
+    border-radius: var(--bef-radius-lg);
     box-shadow: var(--shadow-xl);
     width: 90%;
     max-width: 700px;
@@ -928,7 +928,7 @@ textarea.mapping-input {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     transition: all var(--transition-fast);
 }
 
@@ -948,7 +948,7 @@ textarea.mapping-input {
     background: var(--color-bg-dark);
     color: var(--color-text-primary);
     border: 1px solid var(--color-border-medium);
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     padding: var(--spacing-md);
     font-family: 'Courier New', monospace;
     font-size: 0.875rem;
@@ -972,7 +972,7 @@ textarea.mapping-input {
 
 .alert {
     padding: var(--spacing-md);
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     border: 1px solid;
 }
 
@@ -1070,7 +1070,7 @@ textarea.mapping-input {
 
 .btn:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--bef-shadow-md);
 }
 
 .btn:active:not(:disabled) {
@@ -1584,7 +1584,7 @@ textarea.mapping-input {
     border: 1px solid rgba(59, 130, 246, 0.3);
     color: #bfdbfe;
     padding: 0.15rem 0.55rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     cursor: pointer;
     font-size: 0.875rem;
     transition: all var(--transition-fast);
@@ -1648,7 +1648,7 @@ textarea.mapping-input {
 .preview-popover-content {
     background: rgba(15, 23, 42, 0.95);
     border: 1px solid rgba(59, 130, 246, 0.4);
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     padding: 0.75rem;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(8px);
@@ -1679,7 +1679,7 @@ textarea.mapping-input {
     padding: 0.5rem 0.75rem;
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.3);
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 0.75rem;
     animation: slideDown 0.2s ease;

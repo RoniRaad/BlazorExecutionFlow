@@ -24,9 +24,9 @@
 }
 
 .user-prompt-modal {
-    background: var(--surface, #1e293b);
-    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
-    border-radius: var(--radius-lg, 12px);
+    background: var(--bef-surface, #1e293b);
+    border: 1px solid var(--bef-border-color, rgba(148, 163, 184, 0.2));
+    border-radius: var(--bef-radius-lg, 12px);
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
     min-width: 400px;
     max-width: 600px;
@@ -47,7 +47,7 @@
 
 .user-prompt-header {
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+    border-bottom: 1px solid var(--bef-border-color, rgba(148, 163, 184, 0.2));
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -57,24 +57,24 @@
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
-    color: var(--bef--text-primary, #f1f5f9);
+    color: var(--bef--bef-text-primary, #f1f5f9);
 }
 
 .user-prompt-close {
     background: none;
     border: none;
-    color: var(--text-secondary, #94a3b8);
+    color: var(--bef-text-secondary, #94a3b8);
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0.25rem;
     line-height: 1;
     transition: all 0.15s ease;
-    border-radius: var(--radius, 6px);
+    border-radius: var(--bef-radius, 6px);
 }
 
 .user-prompt-close:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--bef--text-primary, #f1f5f9);
+    color: var(--bef--bef-text-primary, #f1f5f9);
 }
 
 .user-prompt-body {
@@ -85,26 +85,26 @@
     width: 100%;
     padding: 0.75rem 1rem;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
-    border-radius: var(--radius, 6px);
-    color: var(--bef--text-primary, #f1f5f9);
+    border: 1px solid var(--bef-border-color, rgba(148, 163, 184, 0.2));
+    border-radius: var(--bef-radius, 6px);
+    color: var(--bef--bef-text-primary, #f1f5f9);
     font-size: 1rem;
     transition: all 0.15s ease;
 }
 
 .user-prompt-input::placeholder {
-    color: var(--text-secondary, #94a3b8);
+    color: var(--bef-text-secondary, #94a3b8);
 }
 
-.user-prompt-input:focus {
-    outline: none;
-    border-color: var(--primary-color, #6366f1);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
+    .user-prompt-input:focus {
+        outline: none;
+        border-color: var(--bef-primary-color, #6366f1);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
 
 .user-prompt-footer {
     padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+    border-top: 1px solid var(--bef-border-color, rgba(148, 163, 184, 0.2));
     display: flex;
     justify-content: flex-end;
     gap: 0.75rem;
@@ -112,7 +112,7 @@
 
 .user-prompt-footer .btn {
     padding: 0.625rem 1.25rem;
-    border-radius: var(--radius, 6px);
+    border-radius: var(--bef-radius, 6px);
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -122,17 +122,17 @@
 
 .user-prompt-footer .btn-secondary {
     background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary, #94a3b8);
-    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+    color: var(--bef-text-secondary, #94a3b8);
+    border: 1px solid var(--bef-border-color, rgba(148, 163, 184, 0.2));
 }
 
 .user-prompt-footer .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: var(--bef--text-primary, #f1f5f9);
+    color: var(--bef--bef-text-primary, #f1f5f9);
 }
 
 .user-prompt-footer .btn-primary {
-    background: linear-gradient(135deg, var(--primary-color, #6366f1), var(--primary-hover, #4f46e5));
+    background: linear-gradient(135deg, var(--bef-primary-color, #6366f1), var(--bef-primary-hover, #4f46e5));
     color: white;
 }
 
