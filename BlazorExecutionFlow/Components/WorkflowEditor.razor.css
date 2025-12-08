@@ -21,7 +21,7 @@
 .page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--bef--text-primary, #f1f5f9);
+    color: var(--bef--bef-text-primary, #f1f5f9);
     letter-spacing: -0.025em;
 }
 
@@ -33,10 +33,10 @@
 
 .canvas-container {
     flex: 1;
-    background: var(--surface-elevated);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
+    background: var(--bef-surface-elevated);
+    border-radius: var(--bef-radius-lg);
+    border: 1px solid var(--bef-border-color);
+    box-shadow: var(--bef-shadow-lg);
     overflow: hidden;
     position: relative;
 }
@@ -49,7 +49,7 @@
 /* Button Styles */
 .btn {
     padding: 0.5rem 1rem;
-    border-radius: var(--radius);
+    border-radius: var(--bef-radius);
     border: none;
     font-size: 0.875rem;
     font-weight: 500;
@@ -67,26 +67,26 @@
 }
 
 .btn-primary {
-    background: var(--primary-color);
+    background: var(--bef-primary-color);
     color: white;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--bef-shadow-sm);
 }
 
 .btn-primary:hover {
-    background: var(--primary-hover);
-    box-shadow: var(--shadow-md);
+    background: var(--bef-primary-hover);
+    box-shadow: var(--bef-shadow-md);
     transform: translateY(-1px);
 }
 
 .btn-outline-secondary {
     background: transparent;
     color: var(--bef-text-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--bef-border-color);
 }
 
 .btn-outline-secondary:hover {
-    background: var(--background);
-    color: var(--bef--text-primary, #f1f5f9);
+    background: var(--bef-background);
+    color: var(--bef--bef-text-primary, #f1f5f9);
 }
 
 /* Workflow Name Editing */
@@ -106,7 +106,7 @@
     border: 1px solid transparent;
     color: var(--bef-text-secondary);
     padding: 0.375rem;
-    border-radius: var(--radius);
+    border-radius: var(--bef-radius);
     cursor: pointer;
     transition: all 0.15s ease;
     display: flex;
@@ -118,7 +118,7 @@
 
 .btn-icon-edit-small:hover {
     background: rgba(99, 102, 241, 0.1);
-    color: var(--primary-color);
+    color: var(--bef-primary-color);
     border-color: rgba(99, 102, 241, 0.3);
     opacity: 1;
 }
@@ -128,21 +128,21 @@
     font-weight: 700;
     padding: 0.375rem 0.625rem;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    color: var(--bef--text-primary, #f1f5f9);
+    border: 1px solid var(--bef-border-color);
+    border-radius: var(--bef-radius);
+    color: var(--bef--bef-text-primary, #f1f5f9);
     transition: all 0.15s ease;
     width: 100%;
     max-width: 500px;
 }
 
 .workflow-name-input-editor:hover {
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
 }
 
 .workflow-name-input-editor:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: var(--bef-primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 

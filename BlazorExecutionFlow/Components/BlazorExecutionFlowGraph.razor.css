@@ -29,15 +29,15 @@
     --transition-normal: 0.3s ease-in-out;
     --transition-slow: 0.5s ease-in-out;
     /* Border Radius */
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-xl: 1rem;
-    --radius-pill: 999px;
+    --bef-radius-sm: 0.375rem;
+    --bef-radius-md: 0.5rem;
+    --bef-radius-lg: 0.75rem;
+    --bef-radius-xl: 1rem;
+    --bef-radius-pill: 999px;
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --bef-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --bef-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --bef-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.85);
 }
 
@@ -134,7 +134,7 @@ a, .btn-link {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     color: var(--color-text-secondary);
     transition: all var(--transition-fast);
     font-size: 0.9rem;
@@ -245,7 +245,7 @@ h1 {
     background: linear-gradient(135deg, var(--color-danger) 0%, #991b1b 100%);
     padding: 1rem 1.5rem;
     color: white;
-    border-radius: var(--radius-lg);
+    border-radius: var(--bef-radius-lg);
     margin: 1rem;
     box-shadow: var(--shadow-xl);
     display: flex;
@@ -284,7 +284,7 @@ h1 {
         color: white;
         text-decoration: none;
         padding: 0.5rem 1rem;
-        border-radius: var(--radius-md);
+        border-radius: var(--bef-radius-md);
         transition: background-color var(--transition-fast);
         font-weight: 500;
     }
@@ -613,7 +613,7 @@ h1 {
     padding: 1rem 1.5rem;
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: var(--radius-lg);
+    border-radius: var(--bef-radius-lg);
 }
 
 .stat-value {
@@ -644,7 +644,7 @@ h1 {
     width: 350px;
     background: rgba(15, 23, 42, 0.5);
     border: 1px solid var(--color-border-medium);
-    border-radius: var(--radius-xl);
+    border-radius: var(--bef-radius-xl);
     padding: 1.25rem;
     backdrop-filter: blur(10px);
 }
@@ -690,7 +690,7 @@ h1 {
     padding: 0.75rem 4rem 0.75rem 1rem;
     background: rgba(15, 23, 42, 0.8);
     border: 1px solid var(--color-border-medium);
-    border-radius: var(--radius-lg);
+    border-radius: var(--bef-radius-lg);
     color: var(--color-text-primary);
     font-size: 0.9rem;
     transition: all var(--transition-fast);
@@ -729,7 +729,7 @@ h1 {
     padding: 0;
     background: transparent;
     border: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     color: var(--color-text-muted);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -760,7 +760,7 @@ h1 {
     padding: 0.75rem 1rem;
     background: rgba(59, 130, 246, 0.1);
     border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: var(--radius-lg);
+    border-radius: var(--bef-radius-lg);
     margin-bottom: 0.5rem;
 }
 
@@ -773,7 +773,7 @@ h1 {
     padding: 0;
     background: rgba(15, 23, 42, 0.8);
     border: 1px solid var(--color-border-medium);
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     color: var(--color-text-secondary);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -826,7 +826,7 @@ h1 {
 
 .category-filters::-webkit-scrollbar-thumb {
     background: var(--color-border-medium);
-    border-radius: var(--radius-pill);
+    border-radius: var(--bef-radius-pill);
 }
 
 .category-filters::-webkit-scrollbar-thumb:hover {
@@ -837,7 +837,7 @@ h1 {
     padding: 0.4rem 0.75rem;
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--color-border-medium);
-    border-radius: var(--radius-pill);
+    border-radius: var(--bef-radius-pill);
     color: var(--color-text-secondary);
     font-size: 0.8rem;
     font-weight: 500;
@@ -877,12 +877,12 @@ h1 {
 
 .node-list::-webkit-scrollbar-track {
     background: rgba(15, 23, 42, 0.5);
-    border-radius: var(--radius-pill);
+    border-radius: var(--bef-radius-pill);
 }
 
 .node-list::-webkit-scrollbar-thumb {
     background: var(--color-border-medium);
-    border-radius: var(--radius-pill);
+    border-radius: var(--bef-radius-pill);
 }
 
 .node-list::-webkit-scrollbar-thumb:hover {
@@ -896,7 +896,7 @@ h1 {
     padding: 0.875rem 1rem;
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--color-border-medium);
-    border-radius: var(--radius-lg);
+    border-radius: var(--bef-radius-lg);
     color: var(--color-text-primary);
     cursor: pointer;
     transition: all var(--transition-fast);
@@ -930,7 +930,7 @@ h1 {
             bottom: 0;
             width: 3px;
             background: linear-gradient(180deg, var(--color-info) 0%, #1e40af 100%);
-            border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+            border-radius: var(--bef-radius-lg) 0 0 var(--bef-radius-lg);
         }
 
 /* Section Item Styles */
@@ -961,7 +961,7 @@ h1 {
     color: var(--color-text-muted);
     background: rgba(59, 130, 246, 0.1);
     padding: 0.25rem 0.625rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--bef-radius-pill);
     margin-left: 0.5rem;
     font-weight: 500;
     transition: all var(--transition-fast);
@@ -991,7 +991,7 @@ h1 {
     color: var(--color-text-muted);
     background: rgba(59, 130, 246, 0.15);
     padding: 0.25rem 0.625rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--bef-radius-pill);
     margin-left: 0.5rem;
 }
 
@@ -1051,7 +1051,7 @@ h1 {
     white-space: pre-wrap;
     border: 1px solid var(--color-border-medium);
     padding: 1.5rem;
-    border-radius: var(--radius-lg);
+    border-radius: var(--bef-radius-lg);
     max-height: 300px;
     overflow: auto;
     background: rgba(15, 23, 42, 0.8);
@@ -1070,12 +1070,12 @@ h1 {
 
     .export-preview::-webkit-scrollbar-track {
         background: rgba(15, 23, 42, 0.5);
-        border-radius: var(--radius-pill);
+        border-radius: var(--bef-radius-pill);
     }
 
     .export-preview::-webkit-scrollbar-thumb {
         background: var(--color-border-medium);
-        border-radius: var(--radius-pill);
+        border-radius: var(--bef-radius-pill);
     }
 
         .export-preview::-webkit-scrollbar-thumb:hover {
@@ -1134,7 +1134,7 @@ h1 {
 
     .btn:hover:not(:disabled) {
         transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--bef-shadow-md);
     }
 
     .btn:active:not(:disabled) {
@@ -1145,7 +1145,7 @@ h1 {
 .mapping-row {
     transition: background-color var(--transition-fast);
     padding: 0.25rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
 }
 
     .mapping-row:hover {
@@ -1159,7 +1159,7 @@ h1 {
 
     .payload-field-chip:hover {
         transform: translateY(-2px);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--bef-shadow-sm);
     }
 
 /* Form Control Focus States */
@@ -1387,7 +1387,7 @@ h1 {
 .export-modal {
     background: var(--color-bg-panel);
     border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
+    border-radius: var(--bef-radius-lg);
     box-shadow: var(--shadow-xl);
     width: 90%;
     max-width: 700px;
@@ -1422,7 +1422,7 @@ h1 {
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: var(--radius-sm);
+        border-radius: var(--bef-radius-sm);
         transition: all var(--transition-fast);
     }
 
@@ -1442,7 +1442,7 @@ h1 {
     background: var(--color-bg-dark);
     color: var(--color-text-primary);
     border: 1px solid var(--color-border-medium);
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     padding: var(--spacing-md);
     font-family: 'Courier New', monospace;
     font-size: 0.875rem;
@@ -1465,7 +1465,7 @@ h1 {
 
 .alert {
     padding: var(--spacing-md);
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     border: 1px solid;
 }
 
@@ -1491,7 +1491,7 @@ h1 {
     padding: 0.4rem 0.6rem;
     background: rgba(59, 130, 246, 0.08);
     border: 1px solid rgba(59, 130, 246, 0.25);
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     font-size: 0.75rem;
     transition: all var(--transition-fast);
 }
@@ -1523,7 +1523,7 @@ h1 {
     margin-top: 1rem;
     background: rgba(220, 38, 38, 0.15);
     border: 1px solid rgba(220, 38, 38, 0.5);
-    border-radius: var(--radius-md);
+    border-radius: var(--bef-radius-md);
     padding: 1rem;
     animation: slideDown var(--transition-normal);
 }
@@ -1580,7 +1580,7 @@ h1 {
     padding: 0.75rem;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(220, 38, 38, 0.3);
-    border-radius: var(--radius-sm);
+    border-radius: var(--bef-radius-sm);
     color: #fca5a5;
     font-size: 0.75rem;
     max-height: 200px;

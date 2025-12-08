@@ -190,12 +190,6 @@
                                                @onchange="@(e => HandleInputNameChange(inputName, e.Value?.ToString() ?? string.Empty, isRequired: true))"
                                                placeholder="Input name..." />
                                         <span class="input-badge required">Required</span>
-                                        @if (hasValue)
-                                        {
-                                            <button class="btn-icon-danger" @onclick="@(() => HandleRemoveInput(inputName))">
-                                                <i class="bi bi-x-circle"></i>
-                                            </button>
-                                        }
                                     </div>
                                     <input type="text"
                                            value="@displayValue"
