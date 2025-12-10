@@ -19,30 +19,33 @@ namespace BlazorExecutionFlow.Models.NodeV2
             Nodes["0"].DrawflowNodeId = "0";
         }
 
-        public async Task Run(GraphExecutionContext executionContext)
+        public Task Run(GraphExecutionContext executionContext)
         {
-            // Clear results and errors from previous runs
-            foreach (var node in Nodes)
+            return Task.Run(async () => 
             {
-                node.Value.Result = null;
-                node.Value.HasError = false;
-                node.Value.ErrorMessage = null;
-                node.Value.SharedExecutionContext = executionContext;
-            }
+                // Clear results and errors from previous runs
+                foreach (var node in Nodes)
+                {
+                    node.Value.Result = null;
+                    node.Value.HasError = false;
+                    node.Value.ErrorMessage = null;
+                    node.Value.SharedExecutionContext = executionContext;
+                }
 
-            // Event handlers are already attached during component initialization
-            // No need to re-attach them here
+                // Event handlers are already attached during component initialization
+                // No need to re-attach them here
 
-            var startNodes = Nodes.Where(x => x.Value.BackingMethod == startMethod);
-            var tasks = new List<Task>();
-            executionContext.StartTime = DateTime.Now;
+                var startNodes = Nodes.Where(x => x.Value.BackingMethod == startMethod);
+                var tasks = new List<Task>();
+                executionContext.StartTime = DateTime.Now;
 
-            foreach (var startNode in startNodes)
-            {
-                tasks.Add(startNode.Value.ExecuteNode());
-            }
+                foreach (var startNode in startNodes)
+                {
+                    tasks.Add(startNode.Value.ExecuteNode());
+                }
 
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+                await Task.WhenAll(tasks).ConfigureAwait(false);
+            });
         }
     }
 
