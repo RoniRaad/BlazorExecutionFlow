@@ -19,7 +19,7 @@
 }
 
 /* Light Theme Override - Slate & Indigo */
-:root[data-theme="light"] {
+[data-theme="light"] {
     --bef-primary-color: #6366f1;
     --bef-primary-hover: #4f46e5;
     --bef-primary-light: #818cf8;
