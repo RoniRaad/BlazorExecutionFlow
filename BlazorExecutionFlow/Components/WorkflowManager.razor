@@ -250,7 +250,11 @@
                     <div class="section-content">
                         @if (SelectedWorkflow.PreviousExecutions.Any())
                         {
-                            @foreach (var execution in SelectedWorkflow.PreviousExecutions.OrderByDescending(e => e.ExecutedAt).Take(10))
+                            var orderedExecutions = SelectedWorkflow.PreviousExecutions.OrderByDescending(e => e.ExecutedAt).ToList();
+                            var totalPages = (int)Math.Ceiling(orderedExecutions.Count / (double)executionsPerPage);
+                            var pagedExecutions = orderedExecutions.Skip(currentExecutionPage * executionsPerPage).Take(executionsPerPage);
+
+                            @foreach (var execution in pagedExecutions)
                             {
                                 @if (execution.IsRunning)
                                 {
@@ -270,11 +274,14 @@
                                     <div class="execution-item @(execution.Success ? "success" : "error")">
                                         <div class="execution-header">
                                             <i class="bi @(execution.Success ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
-                                            <div>
+                                            <div class="execution-info">
                                                 <strong>@(execution.Success ? "Success" : "Failed")</strong>
                                                 <small>@execution.ExecutedAt.ToString("MMM d, yyyy 'at' h:mm tt")</small>
                                             </div>
                                             <span class="badge">@FormatDuration(execution.Duration)</span>
+                                            <button class="btn-icon-danger-small" @onclick="@(() => HandleRemoveExecution(execution.Id))" title="Remove from history">
+                                                <i class="bi bi-x"></i>
+                                            </button>
                                         </div>
                                         @if (!execution.Success && !string.IsNullOrWhiteSpace(execution.ErrorMessage))
                                         {
@@ -294,6 +301,23 @@
                                         }
                                     </div>
                                 }
+                            }
+
+                            @if (totalPages > 1)
+                            {
+                                <div class="pagination">
+                                    <button class="pagination-btn"
+                                            @onclick="@(() => ChangeExecutionPage(currentExecutionPage - 1))"
+                                            disabled="@(currentExecutionPage == 0)">
+                                        <i class="bi bi-chevron-left"></i> Previous
+                                    </button>
+                                    <span class="pagination-info">Page @(currentExecutionPage + 1) of @totalPages</span>
+                                    <button class="pagination-btn"
+                                            @onclick="@(() => ChangeExecutionPage(currentExecutionPage + 1))"
+                                            disabled="@(currentExecutionPage >= totalPages - 1)">
+                                        Next <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                </div>
                             }
                         }
                         else
@@ -397,6 +421,8 @@
     private string activeTab = "workflows";
     private string selectedEnvironment = "Development";
     private System.Threading.Timer? _refreshTimer;
+    private int currentExecutionPage = 0;
+    private const int executionsPerPage = 10;
 
     // Cache workflows to prevent losing changes when properties are accessed
     private List<WorkflowInfo> _workflowsCache = new();
@@ -473,6 +499,7 @@
     private void SelectWorkflow(string workflowId)
     {
         selectedWorkflowId = workflowId;
+        currentExecutionPage = 0; // Reset to first page when selecting a different workflow
     }
 
     private void HandleCreateWorkflow()
@@ -766,5 +793,33 @@
         {
             await OnWorkflowExecuted.InvokeAsync(execution);
         }
+    }
+
+    private void HandleRemoveExecution(string executionId)
+    {
+        if (SelectedWorkflow == null) return;
+
+        var executionToRemove = SelectedWorkflow.PreviousExecutions.FirstOrDefault(e => e.Id == executionId);
+        if (executionToRemove != null)
+        {
+            SelectedWorkflow.PreviousExecutions.Remove(executionToRemove);
+            WorkflowService.UpdateWorkflow(SelectedWorkflow);
+
+            // Adjust current page if needed
+            var totalExecutions = SelectedWorkflow.PreviousExecutions.Count;
+            var totalPages = (int)Math.Ceiling(totalExecutions / (double)executionsPerPage);
+            if (currentExecutionPage >= totalPages && currentExecutionPage > 0)
+            {
+                currentExecutionPage = totalPages - 1;
+            }
+
+            StateHasChanged();
+        }
+    }
+
+    private void ChangeExecutionPage(int newPage)
+    {
+        currentExecutionPage = newPage;
+        StateHasChanged();
     }
 }
