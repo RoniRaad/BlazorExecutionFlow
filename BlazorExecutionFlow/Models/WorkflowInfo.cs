@@ -31,6 +31,7 @@ namespace BlazorExecutionFlow.Models
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
         public TimeSpan Duration { get; set; }
+        public bool IsRunning { get; set; }
     }
 
     /// <summary>

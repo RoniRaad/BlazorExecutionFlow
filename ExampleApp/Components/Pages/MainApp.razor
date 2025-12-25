@@ -24,8 +24,7 @@
     {
         <WorkflowManager
             @rendermode="InteractiveServer"
-            OnEditWorkflow="HandleEditWorkflow"
-            OnExecuteWorkflow="HandleExecuteWorkflow" />
+            OnEditWorkflow="HandleEditWorkflow" />
     }
     else if (currentView == ViewState.WorkflowEditor && !string.IsNullOrEmpty(currentWorkflowId))
     {
@@ -85,37 +84,5 @@
         currentView = ViewState.WorkflowList;
         currentWorkflowId = null;
         StateHasChanged();
-    }
-
-    private async Task HandleExecuteWorkflow((string WorkflowId, string Environment) executionRequest)
-    {
-        var workflow = WorkflowService.GetWorkflow(executionRequest.WorkflowId);
-        if (workflow == null) return;
-
-        var environmentVariables = EnvVarService.GetAllVariables(executionRequest.Environment);
-        var context = new GraphExecutionContext()
-        {
-            Parameters = workflow.Inputs.ToFrozenDictionary(),
-            EnvironmentVariables = environmentVariables.ToFrozenDictionary()
-        };
-
-        await workflow.FlowGraph.Run(context).ConfigureAwait(false);
-
-        var output = context?.SharedContext.GetByPath("workflow.output");
-        var jsonObject = output?.AsObject().ToDictionary(x => x.Key, x => (object)x.Value);
-
-        var execution = new WorkflowExecution
-        {
-            Id = Guid.NewGuid().ToString(),
-            ExecutedAt = DateTime.Now,
-            Success = !workflow.FlowGraph.Nodes.Any(x => x.Value.LastException is not null),
-            Duration = DateTimeOffset.Now - context!.StartTime,
-            Output = jsonObject ?? []
-        };
-
-        workflow.PreviousExecutions.Add(execution);
-        workflow.ModifiedAt = DateTime.Now;
-        WorkflowService.UpdateWorkflow(workflow);
-        await InvokeAsync(StateHasChanged);
     }
 }

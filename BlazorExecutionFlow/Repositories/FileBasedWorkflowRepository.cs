@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using BlazorExecutionFlow.Helpers;
@@ -16,6 +17,8 @@ namespace BlazorExecutionFlow.Repositories
         private readonly ILogger<FileBasedWorkflowRepository>? _logger;
         private readonly JsonSerializerOptions _jsonOptions;
         private readonly object _lock = new();
+        private readonly ConcurrentDictionary<string, WorkflowInfo> _cache = new();
+        private bool _cacheLoaded = false;
 
         public FileBasedWorkflowRepository(string storageDirectory, ILogger<FileBasedWorkflowRepository>? logger = null)
         {
@@ -42,35 +45,8 @@ namespace BlazorExecutionFlow.Repositories
         {
             lock (_lock)
             {
-                try
-                {
-                    var workflows = new List<WorkflowInfo>();
-                    var files = Directory.GetFiles(_storageDirectory, "*.json");
-
-                    foreach (var file in files)
-                    {
-                        try
-                        {
-                            var json = File.ReadAllText(file);
-                            var workflow = JsonSerializer.Deserialize<WorkflowInfo>(json, _jsonOptions);
-                            if (workflow != null)
-                            {
-                                workflows.Add(workflow);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger?.LogError(ex, "Failed to deserialize workflow from file: {File}", file);
-                        }
-                    }
-
-                    return workflows;
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Failed to get all workflows");
-                    return new List<WorkflowInfo>();
-                }
+                EnsureCacheLoaded();
+                return _cache.Values.ToList();
             }
         }
 
@@ -78,23 +54,8 @@ namespace BlazorExecutionFlow.Repositories
         {
             lock (_lock)
             {
-                try
-                {
-                    var filePath = GetWorkflowFilePath(id);
-                    if (!File.Exists(filePath))
-                    {
-                        return null;
-                    }
-
-                    var json = File.ReadAllText(filePath);
-                    var workflow = JsonSerializer.Deserialize<WorkflowInfo>(json, _jsonOptions);
-                    return workflow;
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Failed to get workflow: {Id}", id);
-                    return null;
-                }
+                EnsureCacheLoaded();
+                return _cache.TryGetValue(id, out var workflow) ? workflow : null;
             }
         }
 
@@ -104,6 +65,12 @@ namespace BlazorExecutionFlow.Repositories
             {
                 try
                 {
+                    EnsureCacheLoaded();
+
+                    // Add to cache first
+                    _cache[workflow.Id] = workflow;
+
+                    // Then persist to disk
                     var filePath = GetWorkflowFilePath(workflow.Id);
                     var json = JsonSerializer.Serialize(workflow, _jsonOptions);
                     File.WriteAllText(filePath, json);
@@ -123,6 +90,12 @@ namespace BlazorExecutionFlow.Repositories
             {
                 try
                 {
+                    EnsureCacheLoaded();
+
+                    // Update cache first
+                    _cache[workflow.Id] = workflow;
+
+                    // Then persist to disk
                     var filePath = GetWorkflowFilePath(workflow.Id);
                     var json = JsonSerializer.Serialize(workflow, _jsonOptions);
                     File.WriteAllText(filePath, json);
@@ -142,6 +115,12 @@ namespace BlazorExecutionFlow.Repositories
             {
                 try
                 {
+                    EnsureCacheLoaded();
+
+                    // Remove from cache first
+                    _cache.TryRemove(id, out _);
+
+                    // Then delete from disk
                     var filePath = GetWorkflowFilePath(id);
                     if (File.Exists(filePath))
                     {
@@ -154,6 +133,42 @@ namespace BlazorExecutionFlow.Repositories
                     _logger?.LogError(ex, "Failed to delete workflow: {Id}", id);
                     throw;
                 }
+            }
+        }
+
+        private void EnsureCacheLoaded()
+        {
+            if (_cacheLoaded)
+                return;
+
+            try
+            {
+                _cache.Clear();
+                var files = Directory.GetFiles(_storageDirectory, "*.json");
+
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        var json = File.ReadAllText(file);
+                        var workflow = JsonSerializer.Deserialize<WorkflowInfo>(json, _jsonOptions);
+                        if (workflow != null)
+                        {
+                            _cache[workflow.Id] = workflow;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "Failed to deserialize workflow from file: {File}", file);
+                    }
+                }
+
+                _cacheLoaded = true;
+                _logger?.LogInformation("Loaded {Count} workflows into cache", _cache.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to load workflows into cache");
             }
         }
 

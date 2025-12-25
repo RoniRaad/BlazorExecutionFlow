@@ -710,6 +710,11 @@
     border-left: 3px solid #ef4444;
 }
 
+.execution-item.running {
+    border-left: 3px solid var(--bef-primary-color);
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.05) 0%, var(--bef-surface-elevated) 100%);
+}
+
 .execution-header {
     display: flex;
     align-items: center;
@@ -726,6 +731,10 @@
 
 .execution-item.error i {
     color: #ef4444;
+}
+
+.execution-item.running i {
+    color: var(--bef-primary-color);
 }
 
 .execution-header strong {
@@ -890,4 +899,18 @@
     background: rgba(99, 102, 241, 0.15);
     color: var(--bef-primary-color);
     border-radius: 999px;
+}
+
+/* Spinning animation for running workflows */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinning {
+    animation: spin 1s linear infinite;
 }

@@ -8,6 +8,8 @@
 @using BlazorExecutionFlow.Models.NodeV2
 @using BlazorExecutionFlow.Helpers
 @using BlazorExecutionFlow.Services
+@using System.Collections.Frozen
+@implements IDisposable
 
 <div class="bef-lib workflow-manager">
     <div class="workflow-sidebar">
@@ -132,7 +134,7 @@
                               rows="2"></textarea>
                 </div>
                 <div class="detail-actions">
-                    <button class="btn-success-custom" @onclick="@(() => OnExecuteWorkflow.InvokeAsync((SelectedWorkflow.Id, selectedEnvironment)))">
+                    <button class="btn-success-custom" @onclick="HandleExecuteWorkflow">
                         <i class="bi bi-play-fill"></i> Execute
                     </button>
                     <button class="btn-primary-custom" @onclick="@(() => OnEditWorkflow.InvokeAsync(SelectedWorkflow.Id))">
@@ -250,32 +252,48 @@
                         {
                             @foreach (var execution in SelectedWorkflow.PreviousExecutions.OrderByDescending(e => e.ExecutedAt).Take(10))
                             {
-                                <div class="execution-item @(execution.Success ? "success" : "error")">
-                                    <div class="execution-header">
-                                        <i class="bi @(execution.Success ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
-                                        <div>
-                                            <strong>@(execution.Success ? "Success" : "Failed")</strong>
-                                            <small>@execution.ExecutedAt.ToString("MMM d, yyyy 'at' h:mm tt")</small>
-                                        </div>
-                                        <span class="badge">@FormatDuration(execution.Duration)</span>
-                                    </div>
-                                    @if (!execution.Success && !string.IsNullOrWhiteSpace(execution.ErrorMessage))
-                                    {
-                                        <div class="execution-error">@execution.ErrorMessage</div>
-                                    }
-                                    @if (execution.Output.Any())
-                                    {
-                                        <details class="execution-output">
-                                            <summary>View output (@execution.Output.Count field@(execution.Output.Count == 1 ? "" : "s"))</summary>
-                                            <div class="output-content">
-                                                @foreach (var output in execution.Output)
-                                                {
-                                                    <div><strong>@output.Key:</strong> <code>@output.Value</code></div>
-                                                }
+                                @if (execution.IsRunning)
+                                {
+                                    <div class="execution-item running">
+                                        <div class="execution-header">
+                                            <i class="bi bi-arrow-repeat spinning"></i>
+                                            <div>
+                                                <strong>Running</strong>
+                                                <small>@execution.ExecutedAt.ToString("MMM d, yyyy 'at' h:mm tt")</small>
                                             </div>
-                                        </details>
-                                    }
-                                </div>
+                                            <span class="badge">@FormatDuration(DateTime.Now - execution.ExecutedAt)</span>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="execution-item @(execution.Success ? "success" : "error")">
+                                        <div class="execution-header">
+                                            <i class="bi @(execution.Success ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
+                                            <div>
+                                                <strong>@(execution.Success ? "Success" : "Failed")</strong>
+                                                <small>@execution.ExecutedAt.ToString("MMM d, yyyy 'at' h:mm tt")</small>
+                                            </div>
+                                            <span class="badge">@FormatDuration(execution.Duration)</span>
+                                        </div>
+                                        @if (!execution.Success && !string.IsNullOrWhiteSpace(execution.ErrorMessage))
+                                        {
+                                            <div class="execution-error">@execution.ErrorMessage</div>
+                                        }
+                                        @if (execution.Output.Any())
+                                        {
+                                            <details class="execution-output">
+                                                <summary>View output (@execution.Output.Count field@(execution.Output.Count == 1 ? "" : "s"))</summary>
+                                                <div class="output-content">
+                                                    @foreach (var output in execution.Output)
+                                                    {
+                                                        <div><strong>@output.Key:</strong> <code>@output.Value</code></div>
+                                                    }
+                                                </div>
+                                            </details>
+                                        }
+                                    </div>
+                                }
                             }
                         }
                         else
@@ -372,12 +390,13 @@
 
 @code {
     [Parameter] public EventCallback<string> OnEditWorkflow { get; set; }
-    [Parameter] public EventCallback<(string WorkflowId, string Environment)> OnExecuteWorkflow { get; set; }
+    [Parameter] public EventCallback<WorkflowExecution> OnWorkflowExecuted { get; set; }
 
     private string searchQuery = string.Empty;
     private string? selectedWorkflowId = null;
     private string activeTab = "workflows";
     private string selectedEnvironment = "Development";
+    private System.Threading.Timer? _refreshTimer;
 
     // Cache workflows to prevent losing changes when properties are accessed
     private List<WorkflowInfo> _workflowsCache = new();
@@ -424,6 +443,26 @@
         {
             selectedWorkflowId = Workflows.OrderByDescending(w => w.ModifiedAt).First().Id;
         }
+
+        // Start a timer to refresh the UI when there are running workflows
+        _refreshTimer = new System.Threading.Timer(async _ =>
+        {
+            RefreshWorkflowsCache();
+            if (HasRunningWorkflows())
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    private bool HasRunningWorkflows()
+    {
+        return Workflows.Any(w => w.PreviousExecutions.Any(e => e.IsRunning));
+    }
+
+    public void Dispose()
+    {
+        _refreshTimer?.Dispose();
     }
 
     private void RefreshWorkflowsCache()
@@ -662,5 +701,70 @@
         SelectedWorkflow.IncludeAsNode = (bool)value;
         WorkflowService.UpdateWorkflow(SelectedWorkflow);
         StateHasChanged();
+    }
+
+    private async Task HandleExecuteWorkflow()
+    {
+        if (SelectedWorkflow == null) return;
+
+        var workflow = SelectedWorkflow;
+        var environmentVariables = EnvVarService.GetAllVariables(selectedEnvironment);
+        var context = new GraphExecutionContext()
+        {
+            Parameters = workflow.Inputs.ToFrozenDictionary(),
+            EnvironmentVariables = environmentVariables.ToFrozenDictionary()
+        };
+
+        // Create running execution record
+        var execution = new WorkflowExecution
+        {
+            Id = Guid.NewGuid().ToString(),
+            ExecutedAt = DateTime.Now,
+            IsRunning = true,
+            Success = false,
+            Duration = TimeSpan.Zero,
+            Output = []
+        };
+
+        workflow.PreviousExecutions.Add(execution);
+        WorkflowService.UpdateWorkflow(workflow);
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await workflow.FlowGraph.Run(context).ConfigureAwait(false);
+
+            var output = context?.SharedContext.GetByPath("workflow.output");
+            var jsonObject = output?.AsObject().ToDictionary(x => x.Key, x => (object)x.Value);
+
+            // Update execution with results
+            execution.IsRunning = false;
+            execution.Success = !workflow.FlowGraph.Nodes.Any(x => x.Value.LastException is not null);
+            execution.Duration = DateTimeOffset.Now - context!.StartTime;
+            execution.Output = jsonObject ?? [];
+
+            if (!execution.Success)
+            {
+                var failedNode = workflow.FlowGraph.Nodes.FirstOrDefault(x => x.Value.LastException is not null).Value;
+                execution.ErrorMessage = failedNode?.ErrorMessage;
+            }
+        }
+        catch (Exception ex)
+        {
+            execution.IsRunning = false;
+            execution.Success = false;
+            execution.Duration = DateTimeOffset.Now - context!.StartTime;
+            execution.ErrorMessage = ex.Message;
+        }
+
+        workflow.ModifiedAt = DateTime.Now;
+        WorkflowService.UpdateWorkflow(workflow);
+        await InvokeAsync(StateHasChanged);
+
+        // Notify parent that execution completed
+        if (OnWorkflowExecuted.HasDelegate)
+        {
+            await OnWorkflowExecuted.InvokeAsync(execution);
+        }
     }
 }
