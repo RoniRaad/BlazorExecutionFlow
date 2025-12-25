@@ -842,6 +842,28 @@
         if (_base is null) return;
         await _base.CallAsync<object>("clear");
         _exportJson = null;
+
+        // Clear the Graph nodes
+        Graph.Nodes.Clear();
+
+        // Add a default Start node
+        var startMethod = typeof(CoreNodes).GetMethod(nameof(CoreNodes.Start));
+        if (startMethod != null)
+        {
+            var startNode = DrawflowHelpers.CreateNodeFromMethod(startMethod);
+            startNode.PosX = 50;
+            startNode.PosY = 50;
+            startNode.NodeInputToMethodInputMap = MappingHelpers.GenerateDefaultInputMappings(startNode.BackingMethod);
+
+            startNode.DrawflowNodeId = (await _base.CreateNodeV2(startNode, "ƒ")).ToString();
+            Graph.Nodes[startNode.DrawflowNodeId] = startNode;
+
+            // Attach event handlers to the new node
+            AttachNodeEventHandlers();
+
+            // Update connection positions
+            await _base.JS.InvokeVoidAsync("DrawflowBlazor.updateConnectionNodes", _base.Id).ConfigureAwait(false);
+        }
     }
 
     /// <summary>

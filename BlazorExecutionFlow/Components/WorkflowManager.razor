@@ -504,6 +504,24 @@
 
     private void HandleCreateWorkflow()
     {
+        // Create a default Start node for the new workflow
+        var startMethod = typeof(BlazorExecutionFlow.Flow.BaseNodes.CoreNodes).GetMethod(nameof(BlazorExecutionFlow.Flow.BaseNodes.CoreNodes.Start));
+        var startNode = startMethod != null ? DrawflowHelpers.CreateNodeFromMethod(startMethod) : null;
+
+        if (startNode != null)
+        {
+            startNode.PosX = 50;
+            startNode.PosY = 50;
+            startNode.DrawflowNodeId = "1"; // Default ID for the first node
+            startNode.NodeInputToMethodInputMap = MappingHelpers.GenerateDefaultInputMappings(startNode.BackingMethod);
+        }
+
+        var nodes = new System.Collections.Concurrent.ConcurrentDictionary<string, Node>();
+        if (startNode != null)
+        {
+            nodes["1"] = startNode;
+        }
+
         var newWorkflow = new WorkflowInfo
         {
             Id = Guid.NewGuid().ToString(),
@@ -512,7 +530,7 @@
             CreatedAt = DateTime.Now,
             ModifiedAt = DateTime.Now,
             Inputs = new Dictionary<string, string>(),
-            FlowGraph = new Graph { Nodes = new System.Collections.Concurrent.ConcurrentDictionary<string, Node>() },
+            FlowGraph = new Graph { Nodes = nodes },
             PreviousExecutions = new List<WorkflowExecution>(),
             IncludeAsNode = false
         };
