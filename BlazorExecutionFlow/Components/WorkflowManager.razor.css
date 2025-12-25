@@ -26,7 +26,7 @@
 
 .tab-button {
     flex: 1;
-    padding: 1rem;
+    padding: 16px;
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
@@ -38,7 +38,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .tab-button:hover {
@@ -63,11 +63,11 @@
 }
 
 .environment-selector {
-    padding: 1rem 1.5rem;
+    padding: 16px 24px;
     border-bottom: 1px solid var(--bef-border-color);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .environment-selector label {
@@ -80,13 +80,13 @@
 
 .environment-controls {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
     align-items: center;
 }
 
 .environment-dropdown {
     flex: 1;
-    padding: 0.625rem 0.875rem;
+    padding: 10px 14px;
     background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -111,7 +111,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--bef-border-color);
     color: var(--bef-text-secondary);
-    padding: 0.5rem;
+    padding: 8px;
     border-radius: var(--bef-radius);
     cursor: pointer;
     transition: all 0.15s ease;
@@ -128,7 +128,7 @@
 }
 
 .sidebar-header {
-    padding: 1.5rem;
+    padding: 24px;
     border-bottom: 1px solid var(--bef-border-color);
     display: flex;
     align-items: center;
@@ -148,7 +148,7 @@
 }
 
 .environment-selector-compact {
-    padding: 1rem 1.5rem;
+    padding: 16px 24px;
     border-bottom: 1px solid var(--bef-border-color);
     background: var(--bef-surface-elevated);
 }
@@ -159,7 +159,7 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--bef-text-secondary);
-    margin: 0 0 0.5rem 0;
+    margin: 0 0 8px 0;
     display: block;
 }
 
@@ -168,14 +168,14 @@
 }
 
 .sidebar-search {
-    padding: 1rem 1.5rem;
+    padding: 16px 24px;
     border-bottom: 1px solid var(--bef-border-color);
     position: relative;
 }
 
 .sidebar-search input {
     width: 100%;
-    padding: 0.75rem 3rem 0.75rem 1rem;
+    padding: 12px 48px 12px 16px;
     background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -195,7 +195,7 @@
 
 .sidebar-search i {
     position: absolute;
-    right: 2.5rem;
+    right: 40px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--bef-text-secondary);
@@ -204,14 +204,14 @@
 .workflow-list {
     flex: 1;
     overflow-y: auto;
-    padding: 1rem;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .workflow-item {
-    padding: 1rem;
+    padding: 16px;
     background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -235,7 +235,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
+    margin-bottom: 8px;
 }
 
 .workflow-item-header h6 {
@@ -253,14 +253,14 @@
 .workflow-desc {
     font-size: 0.85rem;
     color: var(--bef-text-secondary);
-    margin: 0 0 0.75rem;
+    margin: 0 0 12px;
     line-height: 1.4;
 }
 
 .workflow-status {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
     font-size: 0.75rem;
 }
 
@@ -277,19 +277,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 3rem 1rem;
+    padding: 48px 16px;
     color: var(--bef-text-secondary);
     text-align: center;
 }
 
 .empty-state i {
     font-size: 3rem;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
     opacity: 0.5;
 }
 
 .empty-state p {
-    margin: 0 0 1rem;
+    margin: 0 0 16px;
 }
 
 /* Detail Panel */
@@ -301,7 +301,7 @@
 }
 
 .detail-header {
-    padding: 2rem;
+    padding: 32px;
     border-bottom: 1px solid var(--bef-border-color);
     background: var(--bef-surface-elevated);
     display: flex;
@@ -312,7 +312,7 @@
 .detail-header h2 {
     font-size: 2rem;
     font-weight: 700;
-    margin: 0 0 0.5rem;
+    margin: 0 0 8px;
     color: var(--bef-text-primary);
 }
 
@@ -325,7 +325,7 @@
 .workflow-name-display {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 12px;
     transition: all 0.15s ease;
 }
 
@@ -337,7 +337,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid transparent;
     color: var(--bef-text-secondary);
-    padding: 0.5rem;
+    padding: 8px;
     border-radius: var(--bef-radius);
     cursor: pointer;
     transition: all 0.15s ease;
@@ -358,7 +358,7 @@
 .workflow-name-container {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
     flex: 1;
     min-width: 0;
     margin-right: 20px;
@@ -367,7 +367,7 @@
 .workflow-name-input {
     font-size: 1.5rem;
     font-weight: 700;
-    padding: 0.5rem 0.75rem;
+    padding: 8px 12px;
     background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -388,7 +388,7 @@
 
 .workflow-description-input {
     font-size: 0.875rem;
-    padding: 0.5rem 0.75rem;
+    padding: 8px 12px;
     background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -413,13 +413,13 @@
 .environment-name-container {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .environment-name-input {
     font-size: 2rem;
     font-weight: 700;
-    padding: 0.5rem 0.75rem;
+    padding: 8px 12px;
     background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -441,14 +441,14 @@
 
 .detail-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .detail-meta {
-    padding: 1rem 2rem;
+    padding: 16px 32px;
     border-bottom: 1px solid var(--bef-border-color);
     display: flex;
-    gap: 2rem;
+    gap: 32px;
     font-size: 0.875rem;
     color: var(--bef-text-secondary);
 }
@@ -456,18 +456,18 @@
 .detail-meta span {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .detail-meta .checkbox-label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
     cursor: pointer;
     user-select: none;
     transition: all 0.15s ease;
     margin-left: auto;
-    padding-left: 1rem;
+    padding-left: 16px;
 }
 
 .detail-meta .checkbox-label:hover {
@@ -475,8 +475,8 @@
 }
 
 .detail-meta .checkbox-label input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
     accent-color: var(--bef-primary-color);
 }
@@ -495,17 +495,17 @@
 .detail-body {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem;
+    padding: 32px;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 32px;
 }
 
 .detail-section {
     background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius-lg);
-    padding: 1.5rem;
+    padding: 24px;
     box-shadow: var(--bef-shadow-sm);
 }
 
@@ -513,7 +513,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
 }
 
 .section-header h5 {
@@ -526,20 +526,20 @@
 .section-content {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .param-row {
     display: grid;
     grid-template-columns: 200px 1fr;
-    gap: 1rem;
+    gap: 16px;
     align-items: center;
 }
 
 .param-key {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .param-key strong {
@@ -550,7 +550,7 @@
 
 .param-row input {
     width: 100%;
-    padding: 0.5rem 0.75rem;
+    padding: 8px 12px;
     background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -582,7 +582,7 @@
 .input-name-input {
     flex: 1;
     min-width: 120px;
-    padding: 0.375rem 0.625rem;
+    padding: 6px 10px;
     background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -610,7 +610,7 @@
 
 .input-badge {
     display: inline-block;
-    padding: 0.125rem 0.5rem;
+    padding: 2px 8px;
     font-size: 0.7rem;
     font-weight: 600;
     border-radius: 9999px;
@@ -631,12 +631,12 @@
 }
 
 .unused-inputs-divider {
-    margin: 1rem 0 0.5rem 0;
-    padding-top: 0.75rem;
+    margin: 16px 0 8px 0;
+    padding-top: 12px;
     border-top: 1px solid rgba(100, 116, 139, 0.2);
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .unused-inputs-divider span {
@@ -651,19 +651,19 @@
 .env-var-row {
     display: grid;
     grid-template-columns: 250px 1fr;
-    gap: 1rem;
+    gap: 16px;
     align-items: center;
 }
 
 .env-var-key-container {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .env-var-key-input {
     flex: 1;
-    padding: 0.5rem 0.75rem;
+    padding: 8px 12px;
     background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -681,7 +681,7 @@
 
 .env-var-value-input {
     width: 100%;
-    padding: 0.5rem 0.75rem;
+    padding: 8px 12px;
     background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -696,7 +696,7 @@
 }
 
 .execution-item {
-    padding: 1rem;
+    padding: 16px;
     background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
@@ -718,7 +718,7 @@
 .execution-header {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .execution-header i {
@@ -752,8 +752,8 @@
 }
 
 .execution-error {
-    margin-top: 0.75rem;
-    padding: 0.75rem;
+    margin-top: 12px;
+    padding: 12px;
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.3);
     border-radius: var(--bef-radius);
@@ -766,20 +766,20 @@
     font-size: 0.85rem;
     color: var(--bef-text-secondary);
     cursor: pointer;
-    padding: 0.5rem 0;
-    margin-top: 0.75rem;
+    padding: 8px 0;
+    margin-top: 12px;
 }
 
 .output-content {
-    margin-top: 0.5rem;
-    padding: 0.75rem;
+    margin-top: 8px;
+    padding: 12px;
     background: var(--bef-surface);
     border: 1px solid var(--bef-border-color);
     border-radius: var(--bef-radius);
     font-size: 0.85rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .output-content strong {
@@ -793,7 +793,7 @@
 .empty-message {
     text-align: center;
     color: var(--bef-text-secondary);
-    padding: 0 2rem;
+    padding: 0 32px;
     margin: 0;
 }
 
@@ -809,14 +809,14 @@
 
 .empty-detail i {
     font-size: 4rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 24px;
     opacity: 0.5;
 }
 
 .empty-detail h3 {
     font-size: 1.5rem;
     font-weight: 600;
-    margin: 0 0 0.5rem;
+    margin: 0 0 8px;
 }
 
 .empty-detail p {
@@ -825,7 +825,7 @@
 
 /* Buttons */
 .btn-primary-custom, .btn-success-custom, .btn-danger-custom, .btn-secondary-custom {
-    padding: 0.5rem 1rem;
+    padding: 8px 16px;
     border-radius: var(--bef-radius);
     border: none;
     font-size: 0.875rem;
@@ -834,7 +834,7 @@
     transition: all 0.15s ease;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
 .btn-primary-custom {
@@ -883,7 +883,7 @@
     border: none;
     color: #ef4444;
     cursor: pointer;
-    padding: 0.25rem;
+    padding: 4px;
     font-size: 1rem;
     transition: all 0.15s ease;
 }
@@ -895,7 +895,7 @@
 
 .badge {
     font-size: 0.75rem;
-    padding: 0.25rem 0.625rem;
+    padding: 4px 10px;
     background: rgba(99, 102, 241, 0.15);
     color: var(--bef-primary-color);
     border-radius: 999px;
@@ -919,7 +919,7 @@
 .execution-info {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
+    gap: 2px;
     flex: 1;
 }
 
@@ -929,8 +929,8 @@
     border: none;
     color: var(--bef-text-secondary);
     cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 0.25rem;
+    padding: 4px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -949,9 +949,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    margin-top: 1rem;
-    padding: 0.75rem;
+    gap: 16px;
+    margin-top: 16px;
+    padding: 12px;
     border-top: 1px solid var(--bef-border-color);
 }
 
@@ -959,13 +959,13 @@
     background: var(--bef-surface-elevated);
     border: 1px solid var(--bef-border-color);
     color: var(--bef-text-primary);
-    padding: 0.5rem 0.875rem;
-    border-radius: 0.375rem;
+    padding: 8px 14px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 6px;
     font-size: 0.875rem;
 }
 

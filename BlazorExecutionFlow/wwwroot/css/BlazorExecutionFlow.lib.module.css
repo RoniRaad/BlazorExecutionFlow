@@ -1153,8 +1153,8 @@
     .bef-lib .btn-preview {
         position: absolute !important;
         right: 0.25rem !important;
-        background: rgba(59, 130, 246, 0.15) !important;
-        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        background: none !important;
+        border: none !important;
         color: #bfdbfe !important;
         padding: 0.15rem 0.55rem !important;
         border-radius: var(--bef-radius-sm) !important;
@@ -1163,11 +1163,10 @@
         transition: all var(--transition-fast) !important;
         z-index: 1 !important;
         transform: scale(.80) !important;
+        top: -15px;
     }
 
         .bef-lib .btn-preview:hover {
-            background: rgba(59, 130, 246, 0.25) !important;
-            border-color: rgba(59, 130, 246, 0.5) !important;
             transform: scale(.90) !important;
         }
 
