@@ -16,7 +16,6 @@
 @using System.Text.Json
 @using System.Collections.Frozen
 @using static BlazorWorkflow.Helpers.DrawflowHelpers
-@inherits WorkflowGraphBase
 @inject IWorkflowService _workflowService
 
 @if (showModal && editNode is not null)
@@ -214,7 +213,7 @@
     [Parameter] public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
 
     private Dictionary<string, object> options = new Dictionary<string, object>() { ["reroute"] = true };
-    private WorkflowGraphBase? _base;
+    private WorkflowGraph? _base;
     private string? _exportJson;
     private string? _importJson;
     private string? _importError;
@@ -222,7 +221,6 @@
     private bool showModal = false;
     private bool showImportModal = false;
     private Node? editNode = null;
-    private DotNetObjectReference<WorkflowGraph>? _dotNetRef;
 
     private string searchQuery = string.Empty;
     private string? selectedCategory = null;
@@ -923,25 +921,6 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await base.OnAfterRenderAsync(firstRender);
-
-        if (!firstRender) return;
-
-        _dotNetRef = DotNetObjectReference.Create(this);
-
-        await JS.InvokeVoidAsync(
-            "window.DrawflowBlazor.setNodeDoubleClickCallback",
-            ElementId,
-            _dotNetRef
-        );
-
-        // Attach event handlers to all nodes for status updates
-        // This is CRITICAL for UI feedback (pulsing animations, error states, etc.)
-        AttachNodeEventHandlers();
-    }
-
     [JSInvokable]
     public async Task OnNodeDoubleClickFromJs(string nodeId)
     {
@@ -951,11 +930,5 @@
         }
 
         await DoubleClickedNode(nodeId);
-    }
-
-
-    public void Dispose()
-    {
-        _dotNetRef?.Dispose();
     }
 }

@@ -21,9 +21,9 @@ public class DrawflowEventArgs : EventArgs
     public T? GetPayload<T>() => JsonSerializer.Deserialize<T>(PayloadJson);
 }
 
-public partial class WorkflowGraphBase : ComponentBase, IAsyncDisposable
+public partial class WorkflowGraph : ComponentBase, IAsyncDisposable
 {
-    private DotNetObjectReference<WorkflowGraphBase>? _selfRef;
+    private DotNetObjectReference<WorkflowGraph>? _selfRef;
     private bool _created;
 
     [Inject] public IJSRuntime JS { get; set; } = default!;
@@ -119,6 +119,17 @@ public partial class WorkflowGraphBase : ComponentBase, IAsyncDisposable
             // This gives us a baseline state to return to
             await Task.Delay(100).ConfigureAwait(false); // Small delay to ensure everything is settled
             TakeSnapshot();
+
+            // Setup double-click callback
+            await JS.InvokeVoidAsync(
+                "window.DrawflowBlazor.setNodeDoubleClickCallback",
+                ElementId,
+                _selfRef
+            );
+
+            // Attach event handlers to all nodes for status updates
+            // This is CRITICAL for UI feedback (pulsing animations, error states, etc.)
+            AttachNodeEventHandlers();
         }
     }
 

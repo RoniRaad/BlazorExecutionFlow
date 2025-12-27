@@ -84,7 +84,7 @@ namespace BlazorWorkflow.Helpers
             return nodes;
         }
 
-        public static async Task<int> CreateNodeV2(this WorkflowGraphBase dfBase, Node node, string symbol)
+        public static async Task<int> CreateNodeV2(this WorkflowGraph dfBase, Node node, string symbol)
         {
             var inputHtml = "";
 
@@ -127,7 +127,7 @@ namespace BlazorWorkflow.Helpers
             return nodeId ?? throw new InvalidOperationException("Failed to create node: AddNodeAsync returned null");
         }
 
-        public static async Task SetNodeStatus(this WorkflowGraphBase dfBase, string nodeId, NodeStatus nodeStatus)
+        public static async Task SetNodeStatus(this WorkflowGraph dfBase, string nodeId, NodeStatus nodeStatus)
         {
             await dfBase.JS.InvokeVoidAsync("DrawflowBlazor.setNodeStatus",
                 dfBase.Id,

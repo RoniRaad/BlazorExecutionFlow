@@ -11,7 +11,7 @@ public sealed class DrawflowGraph
     public DrawflowDocument Document { get; }
     public string PageName { get; }
     public DrawflowPage Page { get; }
-    public WorkflowGraphBase DrawflowBase { get; set; }
+    public WorkflowGraph DrawflowBase { get; set; }
 
     // Cached quick-lookups
     private readonly Dictionary<string, DrawflowNode> _nodes;
@@ -30,7 +30,7 @@ public sealed class DrawflowGraph
     /// <summary>
     /// Parse Drawflow JSON and focus on a page (default: "Home").
     /// </summary>
-    public static DrawflowGraph Parse(WorkflowGraphBase dfBase, string json, string pageName = "Home")
+    public static DrawflowGraph Parse(WorkflowGraph dfBase, string json, string pageName = "Home")
     {
         var options = new JsonSerializerOptions
         {
