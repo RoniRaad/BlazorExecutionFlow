@@ -1,0 +1,1750 @@
+﻿/* ==========================================================================
+   BEF Library Styles (Scoped)
+   Wrapper: .bw-lib
+   Notes:
+   - All component styles are scoped under .bw-lib to avoid leaking into host apps.
+   - Keyframes remain global (CSS limitation), but only referenced by .bw-lib rules.
+   - !important is applied selectively where Bootstrap / host styles / inline styles
+     commonly win (modal/backdrop, modal-content, form controls, inline-styled button).
+   ========================================================================== */
+
+/* ===== Theme Variables (Default: Dark Theme) ===== */
+/* Put the wrapper class on a parent element that contains the modal + drawflow host */
+.bw-lib {
+    /* ===== Theme Variables for Library Components ===== */
+    --bw-primary-color: #6366f1;
+    --bw-primary-hover: #7c3aed;
+    --bw-primary-light: #818cf8;
+    --bw-secondary-color: #06b6d4;
+    --bw-background: #192138;
+    --bw-surface: #1f2937;
+    --bw-surface-elevated: #2d3748;
+    --bw-border-color: #374151;
+    --bw-text-primary: #f9fafb;
+    --bw-text-secondary: #9ca3af;
+    --bw-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --bw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --bw-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --bw-radius: 8px;
+    --bw-radius-lg: 12px;
+    /* ===== Additional Design System Variables ===== */
+    /* Spacing */
+    --spacing-xs: 0.15rem;
+    --spacing-sm: 0.45rem;
+    --spacing-md: 0.75rem;
+    --spacing-lg: 1.25rem;
+    --spacing-xl: 2rem;
+    /* Background system (legacy naming) - Dark Theme */
+    --color-bg-dark: #020617;
+    --color-bg-panel: rgba(15, 23, 42, 0.9);
+    --color-bg-gradient-start: #111827;
+    --color-bg-gradient-end: #020617;
+    /* Borders (legacy naming) - Dark Theme */
+    --color-border-light: rgba(148, 163, 184, 0.35);
+    --color-border-medium: rgba(55, 65, 81, 0.9);
+    --color-border-dark: rgba(31, 41, 55, 0.9);
+    /* Text (legacy naming) - Dark Theme */
+    --color-text-primary: #e5e7eb;
+    --color-text-secondary: #9ca3af;
+    --color-text-muted: #6b7280;
+    /* Accent */
+    --color-primary: #1b6ec2;
+    --color-success: #16a34a;
+    --color-warning: #f59e0b;
+    --color-danger: #dc2626;
+    --color-info: #3b82f6;
+    /* Transitions */
+    --transition-fast: 0.15s ease-in-out;
+    --transition-normal: 0.3s ease-in-out;
+    --transition-slow: 0.5s ease-in-out;
+    /* Border Radius (legacy naming) */
+    --bw-radius-sm: 0.375rem;
+    --bw-radius-md: 0.5rem;
+    --bw-radius-lg-alt: 0.75rem;
+    --bw-radius-xl: 1rem;
+    --bw-radius-pill: 999px;
+    /* Shadows (legacy naming) - Dark Theme */
+    --bw-shadow-sm-alt: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --bw-shadow-md-alt: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --bw-shadow-lg-alt: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.85);
+    /* ===== Drawflow Theme Tokens (scoped) ===== */
+    --df-radius: 12px;
+    --df-canvas: #1f2430;
+    --df-node: #252c3b;
+    --df-node-2: #2c3548;
+    --df-border: #3a465d;
+    --df-shadow: rgba(0,0,0,.38);
+    --df-text: #e9edf6;
+    --df-text-weak: #c3cad6;
+    --df-text-muted: #9aa4b5;
+    --df-heading: #f4f7fd;
+    --df-accent: #60a5fa; /* cyan-ish blue */
+    --df-accent-2: #a855f7; /* violet */
+
+    --df-port: #3a465e;
+    --df-port-hover: #495979;
+    --df-wire: #6ea0ff;
+    --df-wire-active: #9ed0ff;
+}
+
+    /* ===== Light Theme Override (Dim / Less Dark, noticeably lifted) ===== */
+    /* Supports either putting data-theme on the wrapper or on any ancestor. */
+    .bw-lib[data-theme="light"],
+    [data-theme="light"] .bw-lib {
+        --bw-primary-color: #6366f1;
+        --bw-primary-hover: #7c3aed;
+        --bw-primary-light: #818cf8;
+        --bw-secondary-color: #06b6d4;
+        /* Lifted backgrounds/surfaces */
+        --bw-background: #2c3e5f;
+        --bw-surface: #31486b;
+        --bw-surface-elevated: #395277;
+        --bw-border-color: #5a7396;
+        /* Softer text */
+        --bw-text-primary: #f1f5f9;
+        --bw-text-secondary: #d5deea;
+        /* Shadows reduced */
+        --bw-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.14);
+        --bw-shadow-md: 0 8px 16px -10px rgba(0, 0, 0, 0.22), 0 2px 6px -2px rgba(0, 0, 0, 0.16);
+        --bw-shadow-lg: 0 22px 34px -22px rgba(0, 0, 0, 0.30), 0 10px 18px -12px rgba(0, 0, 0, 0.18);
+        /* Background system - lifted (key to making the modal “feel lighter”) */
+        --color-bg-dark: #121c35;
+        --color-bg-panel: rgba(255, 255, 255, 0.06);
+        --color-bg-gradient-start: #1b2a45;
+        --color-bg-gradient-end: #0e162c;
+        /* Borders - brighter */
+        --color-border-light: rgba(226, 232, 240, 0.20);
+        --color-border-medium: rgba(226, 232, 240, 0.14);
+        --color-border-dark: rgba(226, 232, 240, 0.10);
+        /* Text */
+        --color-text-primary: #eaf0f8;
+        --color-text-secondary: #d5deea;
+        --color-text-muted: #a5b4cf;
+        /* Legacy shadow tokens - lifted */
+        --bw-shadow-sm-alt: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        --bw-shadow-md-alt: 0 12px 22px -16px rgba(0, 0, 0, 0.22);
+        --bw-shadow-lg-alt: 0 26px 46px -34px rgba(0, 0, 0, 0.28);
+        --shadow-xl: 0 24px 80px rgba(0, 0, 0, 0.45);
+        /* Drawflow Light Theme Override (Dim / Lifted) */
+        --df-canvas: #2a3650;
+        --df-node: #32405c;
+        --df-node-2: #394a69;
+        --df-border: #5a7396;
+        --df-shadow: rgba(0, 0, 0, 0.28);
+        --df-text: #eaf0f8;
+        --df-text-weak: #d5deea;
+        --df-text-muted: #a5b4cf;
+        --df-heading: #f4f7fd;
+        --df-accent: #60a5fa;
+        --df-accent-2: #a855f7;
+        --df-port: #58739a;
+        --df-port-hover: #6b89b7;
+        --df-wire: #6ea0ff;
+        --df-wire-active: #9ed0ff;
+    }
+
+    /* ==========================================================================
+   Node Editor Modal
+   ========================================================================== */
+
+    .bw-lib .node-editor-dialog {
+        width: 90% !important;
+        max-width: 1660px !important;
+        margin: 0 auto !important;
+        height: 100vh !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .bw-lib .node-editor-content {
+        background: radial-gradient(circle at top, var(--color-bg-gradient-start), var(--color-bg-gradient-end) 55%, var(--color-bg-gradient-end) 100%) !important;
+        color: var(--color-text-primary) !important;
+        border-radius: 1.25rem !important;
+        border: 1px solid var(--color-border-light) !important;
+        box-shadow: var(--shadow-xl) !important;
+        height: 93vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    .bw-lib .node-editor-header {
+        border-bottom: 1px solid rgba(100, 116, 139, 0.4) !important;
+        padding: 0.85rem 1.25rem !important;
+        align-items: center !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        gap: 1rem !important;
+    }
+
+    .bw-lib .btn-close-modal {
+        background: transparent !important;
+        border: none !important;
+        padding: 0.5rem !important;
+        color: #9ca3af !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all var(--transition-fast) !important;
+        border-radius: var(--bw-radius-sm) !important;
+        flex-shrink: 0 !important;
+    }
+
+        .bw-lib .btn-close-modal:hover {
+            background: rgba(239, 68, 68, 0.1) !important;
+            color: #ef4444 !important;
+        }
+
+        .bw-lib .btn-close-modal svg {
+            width: 1.5rem !important;
+            height: 1.5rem !important;
+        }
+
+    .bw-lib .node-title-container {
+        flex: 1 !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-right: 40px !important;
+    }
+
+    .bw-lib .node-name-display {
+        display: flex !important;
+        align-items: center !important;
+        position: relative !important;
+    }
+
+    .bw-lib .node-title-container .modal-title {
+        margin: 0 !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.02em !important;
+        cursor: pointer !important;
+        padding: 0.25rem 0.5rem !important;
+        border-radius: var(--bw-radius-sm) !important;
+        transition: background-color var(--transition-fast) !important;
+    }
+
+        .bw-lib .node-title-container .modal-title:hover {
+            background-color: rgba(100, 116, 139, 0.1) !important;
+        }
+
+    .bw-lib .btn-edit-node-name {
+        background: transparent !important;
+        border: none !important;
+        padding: 0.25rem !important;
+        color: #9ca3af !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: color var(--transition-fast) !important;
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+        position: absolute !important;
+        right: -12px !important;
+    }
+
+        .bw-lib .btn-edit-node-name:hover {
+            color: #e5e7eb !important;
+        }
+
+        .bw-lib .btn-edit-node-name svg {
+            width: 1rem !important;
+            height: 1rem !important;
+        }
+
+    .bw-lib .node-name-input {
+        width: 100% !important;
+        font-size: 1.25rem !important;
+        font-weight: 600 !important;
+        padding: 0.5rem 0.75rem !important;
+        background: rgba(51, 65, 85, 0.4) !important;
+        border: 1px solid rgba(100, 116, 139, 0.6) !important;
+        border-radius: var(--bw-radius-sm) !important;
+        color: #f3f4f6 !important;
+        transition: border-color var(--transition-fast) !important;
+    }
+
+        .bw-lib .node-name-input:focus {
+            outline: none !important;
+            border-color: var(--bw-primary-color) !important;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+        }
+
+    .bw-lib .node-type-subtitle {
+        margin: -5px 0 0 !important;
+        font-size: 0.75rem !important;
+        color: #9ca3af !important;
+        font-weight: 400 !important;
+    }
+
+    .bw-lib .node-editor-subtitle {
+        margin: 0 !important;
+        font-size: 0.8rem !important;
+        color: #9ca3af !important;
+    }
+
+    .bw-lib .node-editor-body {
+        padding: 0 !important;
+        flex: 1 !important;
+        overflow: hidden !important;
+    }
+
+    .bw-lib .node-editor-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) !important;
+        gap: 2px !important;
+        height: 100% !important;
+    }
+
+    .bw-lib .node-editor-panel {
+        background: rgba(30, 41, 59, 0.6) !important;
+        border-radius: 0 !important;
+        border: none !important;
+        border-right: 1px solid rgba(100, 116, 139, 0.3) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+        .bw-lib .node-editor-panel:last-child {
+            border-right: none !important;
+        }
+
+    .bw-lib .panel-header {
+        padding: 1rem 1.25rem !important;
+        border-bottom: 1px solid rgba(100, 116, 139, 0.3) !important;
+        background: rgba(51, 65, 85, 0.3) !important;
+    }
+
+        .bw-lib .panel-header h6 {
+            margin: 0 !important;
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            color: #f3f4f6 !important;
+        }
+
+    .bw-lib .panel-caption {
+        margin: 0.25rem 0 0 !important;
+        font-size: 0.7rem !important;
+        color: #9ca3af !important;
+    }
+
+    .bw-lib .panel-body {
+        padding: 1.25rem !important;
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+        overflow: hidden !important;
+    }
+
+    .bw-lib .panel-body-scroll {
+        overflow: auto !important;
+    }
+
+    .bw-lib .panel-section {
+        background: transparent !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+
+    .bw-lib .panel-section-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        color: #d1d5db !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        margin-bottom: 0.75rem !important;
+        padding-bottom: 0.5rem !important;
+        border-bottom: 1px solid rgba(100, 116, 139, 0.2) !important;
+    }
+
+    .bw-lib .panel-divider {
+        margin: 1.5rem 0 !important;
+        border: none !important;
+        border-top: 1px solid rgba(100, 116, 139, 0.2) !important;
+    }
+
+    /* Pills */
+    .bw-lib .pill {
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 0.15rem 0.5rem !important;
+        border-radius: 999px !important;
+        font-size: 0.7rem !important;
+        font-weight: 500 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.08em !important;
+    }
+
+    .bw-lib .pill-input {
+        background: rgba(22, 163, 74, 0.15) !important;
+        color: #bbf7d0 !important;
+        border: 1px solid rgba(22, 163, 74, 0.7) !important;
+    }
+
+    .bw-lib .pill-processing {
+        background: rgba(59, 130, 246, 0.18) !important;
+        color: #bfdbfe !important;
+        border: 1px solid rgba(59, 130, 246, 0.75) !important;
+    }
+
+    .bw-lib .pill-output {
+        background: rgba(245, 158, 11, 0.18) !important;
+        color: #fed7aa !important;
+        border: 1px solid rgba(245, 158, 11, 0.75) !important;
+    }
+
+    /* Payload preview */
+    .bw-lib .payload-preview {
+        flex: 1 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        border-top: 1px solid rgba(100, 116, 139, 0.2) !important;
+        background: rgba(15, 23, 42, 0.3) !important;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+        font-size: 0.75rem !important;
+        padding: 1rem !important;
+        color: #f1f5f9 !important;
+        overflow: auto !important;
+        white-space: pre !important;
+    }
+
+    .bw-lib .payload-preview--output {
+        min-height: 120px !important;
+    }
+
+    .bw-lib .payload-field-list {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.3rem !important;
+        max-height: 120px !important;
+        overflow: auto !important;
+    }
+
+    .bw-lib .payload-field-chip {
+        border-radius: 999px !important;
+        border: 1px solid rgba(55, 65, 81, 0.9) !important;
+        background: rgba(15, 23, 42, 0.9) !important;
+        font-size: 0.7rem !important;
+        padding: 0.15rem 0.55rem !important;
+        color: #e5e7eb !important;
+        cursor: pointer !important;
+    }
+
+        .bw-lib .payload-field-chip:hover {
+            border-color: rgba(96, 165, 250, 0.9) !important;
+        }
+
+    /* Mapping lists */
+    .bw-lib .mapping-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        max-height: none !important;
+        overflow: visible !important;
+        position: relative !important;
+    }
+
+    .bw-lib .mapping-row {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto !important;
+        gap: 0.5rem !important;
+        align-items: end !important;
+        transition: background-color var(--transition-fast) !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+    }
+
+        .bw-lib .mapping-row:hover {
+            background-color: transparent !important;
+        }
+
+    /* Simple mapping */
+    .bw-lib .simple-mapping-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.625rem !important;
+        max-height: none !important;
+        overflow: visible !important;
+        position: relative !important;
+    }
+
+    .bw-lib .simple-mapping-item {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        transition: background-color var(--transition-fast) !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        border: none !important;
+        border-bottom: 1px solid rgba(100, 116, 139, 0.15) !important;
+        padding-bottom: 0.75rem !important;
+    }
+
+        .bw-lib .simple-mapping-item:last-child {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+        }
+
+        .bw-lib .simple-mapping-item:hover {
+            background-color: transparent !important;
+        }
+
+    .bw-lib .simple-mapping-label {
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        color: #e5e7eb !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: baseline !important;
+        gap: 0.375rem !important;
+    }
+
+    .bw-lib .param-type-hint {
+        font-size: 0.675rem !important;
+        color: #9ca3af !important;
+        font-weight: 400 !important;
+    }
+
+    /* Mapping input styling */
+    .bw-lib .mapping-input {
+        background-color: rgba(51, 65, 85, 0.4) !important;
+        border: 1px solid rgba(100, 116, 139, 0.5) !important;
+        color: var(--color-text-primary) !important;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast) !important;
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        min-height: 1.5rem !important;
+        font-size: 0.7125rem !important;
+    }
+
+        .bw-lib .mapping-input:hover {
+            border-color: rgba(96, 165, 250, 0.6) !important;
+        }
+
+        .bw-lib .mapping-input:focus {
+            background-color: rgba(51, 65, 85, 0.6) !important;
+            border-color: var(--color-info) !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+        }
+
+    /* Textarea-specific */
+    .bw-lib textarea.mapping-input {
+        resize: vertical !important;
+        min-height: 1.75rem !important;
+        max-height: 10rem !important;
+        font-family: inherit !important;
+        overflow-y: auto !important;
+        padding-right: 15px !important;
+    }
+
+    /* Label row */
+    .bw-lib .simple-mapping-label-row {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Workflow output checkbox */
+    .bw-lib .workflow-output-checkbox-label {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.3rem !important;
+        margin: 0 !important;
+        cursor: pointer !important;
+        font-size: 0.7rem !important;
+        color: var(--color-text-secondary) !important;
+        transition: color var(--transition-fast) !important;
+        white-space: nowrap !important;
+    }
+
+        .bw-lib .workflow-output-checkbox-label:hover {
+            color: var(--color-text-primary) !important;
+        }
+
+    .bw-lib .workflow-output-checkbox {
+        width: 13px !important;
+        height: 13px !important;
+        cursor: pointer !important;
+        accent-color: var(--color-info) !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .bw-lib .workflow-output-checkbox-text {
+        user-select: none !important;
+    }
+
+    /* JSON preview controls */
+    .bw-lib .json-controls {
+        display: flex !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0 !important;
+        padding-bottom: 0.75rem !important;
+        border-bottom: 1px solid rgba(100, 116, 139, 0.2) !important;
+        align-items: center !important;
+    }
+
+    .bw-lib .json-search {
+        flex: 1 !important;
+        min-width: 0 !important;
+        background-color: rgba(51, 65, 85, 0.3) !important;
+        border: 1px solid rgba(100, 116, 139, 0.3) !important;
+        color: #e5e7eb !important;
+        font-size: 0.75rem !important;
+        padding: 0.5rem 0.75rem !important;
+        border-radius: var(--bw-radius-sm) !important;
+    }
+
+        .bw-lib .json-search:focus {
+            background-color: rgba(51, 65, 85, 0.6) !important;
+            border-color: rgba(96, 165, 250, 0.6) !important;
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25) !important;
+            color: #e5e7eb !important;
+        }
+
+        .bw-lib .json-search::placeholder {
+            color: #9ca3af !important;
+        }
+
+    .bw-lib .json-filter {
+        flex: 0 0 auto !important;
+        width: 120px !important;
+        background-color: rgba(51, 65, 85, 0.3) !important;
+        border: 1px solid rgba(100, 116, 139, 0.3) !important;
+        color: #e5e7eb !important;
+        font-size: 0.75rem !important;
+        padding: 0.5rem 0.75rem !important;
+        cursor: pointer !important;
+        border-radius: var(--bw-radius-sm) !important;
+    }
+
+        .bw-lib .json-filter:focus {
+            background-color: rgba(51, 65, 85, 0.6) !important;
+            border-color: rgba(96, 165, 250, 0.6) !important;
+            outline: none !important;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25) !important;
+        }
+
+        .bw-lib .json-filter option {
+            background-color: #1f2937 !important;
+            color: #e5e7eb !important;
+        }
+
+    /* JSON highlight */
+    .bw-lib .json-highlight {
+        background-color: rgba(251, 191, 36, 0.3) !important;
+        border-radius: 2px !important;
+        padding: 0 2px !important;
+        box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.5) !important;
+    }
+
+    .bw-lib .mapping-col label {
+        font-size: 0.675rem !important;
+        color: #9ca3af !important;
+        margin-bottom: 0.25rem !important;
+        font-weight: 500 !important;
+    }
+
+    .bw-lib .mapping-arrow {
+        font-size: 0.875rem !important;
+        color: #9ca3af !important;
+        text-align: center !important;
+        padding-bottom: 0.25rem !important;
+    }
+
+    .bw-lib .btn-xs {
+        --bs-btn-padding-y: 0.15rem;
+        --bs-btn-padding-x: 0.45rem;
+        --bs-btn-font-size: 0.7rem;
+        border-radius: 999px !important;
+    }
+
+    .bw-lib .btn-add-entry {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.25rem !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.625rem !important;
+        font-weight: 600 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        background: rgba(99, 102, 241, 0.1) !important;
+        color: var(--bw-primary-color) !important;
+        border: 1px solid rgba(99, 102, 241, 0.3) !important;
+        border-radius: var(--bw-radius-sm) !important;
+        cursor: pointer !important;
+        transition: all var(--transition-fast) !important;
+    }
+
+        .bw-lib .btn-add-entry:hover {
+            background: rgba(99, 102, 241, 0.15) !important;
+            border-color: rgba(99, 102, 241, 0.5) !important;
+            color: var(--bw-primary-light) !important;
+        }
+
+        .bw-lib .btn-add-entry:active {
+            background: rgba(99, 102, 241, 0.2) !important;
+            transform: translateY(1px) !important;
+        }
+
+        .bw-lib .btn-add-entry svg {
+            width: 0.75rem !important;
+            height: 0.75rem !important;
+        }
+
+    .bw-lib .btn-icon {
+        border-radius: 999px !important;
+        border: 1px solid rgba(55, 65, 81, 0.9) !important;
+        background: rgba(15, 23, 42, 1) !important;
+        width: 1.5rem !important;
+        height: 1.5rem !important;
+        padding: 0 !important;
+        font-size: 0.75rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #9ca3af !important;
+    }
+
+        .bw-lib .btn-icon:hover {
+            border-color: rgba(248, 113, 113, 0.9) !important;
+            color: #fecaca !important;
+        }
+
+    .bw-lib .node-editor-footer {
+        border-top: 1px solid rgba(31, 41, 55, 0.9) !important;
+        padding: 0.5rem 1.25rem !important;
+    }
+
+        .bw-lib .node-editor-footer .btn {
+            font-size: 0.85rem !important;
+        }
+
+    /* Scriban Preview Styles */
+    .bw-lib .scriban-preview-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.4rem !important;
+        max-height: 180px !important;
+        overflow-y: auto !important;
+    }
+
+    .bw-lib .scriban-preview-item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        padding: 0.4rem 0.6rem !important;
+        background: rgba(59, 130, 246, 0.08) !important;
+        border: 1px solid rgba(59, 130, 246, 0.25) !important;
+        border-radius: var(--bw-radius-sm) !important;
+        font-size: 0.75rem !important;
+        transition: all var(--transition-fast) !important;
+    }
+
+        .bw-lib .scriban-preview-item:hover {
+            background: rgba(59, 130, 246, 0.12) !important;
+            border-color: rgba(59, 130, 246, 0.4) !important;
+        }
+
+    .bw-lib .scriban-preview-label {
+        font-weight: 600 !important;
+        color: #bfdbfe !important;
+        min-width: 80px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .bw-lib .scriban-preview-value {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+        color: #e5e7eb !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        flex: 1 !important;
+    }
+
+    /* Node Error Alert */
+    .bw-lib .node-error-alert {
+        margin: 1rem 1.25rem 1.5rem 1.25rem !important;
+        background: rgba(220, 38, 38, 0.15) !important;
+        border: 1px solid rgba(220, 38, 38, 0.5) !important;
+        border-radius: var(--bw-radius-md) !important;
+        padding: 1rem !important;
+        animation: slideDown var(--transition-normal) !important;
+    }
+
+        .bw-lib .node-error-alert .error-header {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .bw-lib .node-error-alert .error-icon {
+            width: 1.25rem !important;
+            height: 1.25rem !important;
+            color: #fca5a5 !important;
+            flex-shrink: 0 !important;
+        }
+
+    .bw-lib .error-dismiss-btn {
+        margin-left: auto !important;
+        background: transparent !important;
+        border: none !important;
+        color: #fca5a5 !important;
+        font-size: 1.25rem !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        padding: 0.25rem 0.5rem !important;
+        border-radius: var(--bw-radius-sm) !important;
+        transition: all var(--transition-fast) !important;
+    }
+
+        .bw-lib .error-dismiss-btn:hover {
+            background: rgba(220, 38, 38, 0.2) !important;
+            color: #fecaca !important;
+        }
+
+        .bw-lib .error-dismiss-btn:active {
+            transform: scale(0.95) !important;
+        }
+
+    .bw-lib .node-error-alert .error-message {
+        margin: 0 !important;
+        color: #fecaca !important;
+        font-size: 0.9rem !important;
+    }
+
+    .bw-lib .node-error-alert .error-details {
+        margin-top: 0.75rem !important;
+        cursor: pointer !important;
+    }
+
+        .bw-lib .node-error-alert .error-details summary {
+            color: #fca5a5 !important;
+            font-size: 0.85rem !important;
+            user-select: none !important;
+        }
+
+            .bw-lib .node-error-alert .error-details summary:hover {
+                color: #fecaca !important;
+            }
+
+    .bw-lib .node-error-alert .error-stack {
+        margin-top: 0.5rem !important;
+        padding: 0.75rem !important;
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(220, 38, 38, 0.3) !important;
+        border-radius: var(--bw-radius-sm) !important;
+        color: #fca5a5 !important;
+        font-size: 0.75rem !important;
+        max-height: 200px !important;
+        overflow: auto !important;
+        white-space: pre-wrap !important;
+        word-break: break-all !important;
+    }
+
+    /* Drag and Drop */
+    .bw-lib .payload-field-chip[draggable="true"] {
+        cursor: grab !important;
+        user-select: none !important;
+        transition: all var(--transition-fast) !important;
+    }
+
+        .bw-lib .payload-field-chip[draggable="true"]:active {
+            cursor: grabbing !important;
+        }
+
+        .bw-lib .payload-field-chip[draggable="true"]:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+        }
+
+    .bw-lib .droppable-input:focus {
+        outline: 2px solid rgba(59, 130, 246, 0.5) !important;
+        outline-offset: 2px !important;
+    }
+
+    .bw-lib .droppable-input.drag-over,
+    .bw-lib .droppable-input:has(+ *):where(:active) {
+        background: rgba(59, 130, 246, 0.1) !important;
+        border-color: rgba(59, 130, 246, 0.5) !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+
+    /* Modal Backdrop (Bootstrap override) */
+    .bw-lib .modal-backdrop {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        z-index: 1040 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
+    }
+
+        .bw-lib .modal-backdrop.fade {
+            opacity: 0 !important;
+        }
+
+        .bw-lib .modal-backdrop.show {
+            opacity: 1 !important;
+            transition: opacity var(--transition-normal) !important;
+        }
+
+    /* Dim “Light” Theme: make backdrop less heavy (big perceptual impact) */
+    .bw-lib[data-theme="light"] .modal-backdrop,
+    [data-theme="light"] .bw-lib .modal-backdrop {
+        background-color: rgba(0, 0, 0, 0.45) !important;
+    }
+
+    /* Modal Transitions */
+    .bw-lib .modal {
+        transition: opacity var(--transition-normal) !important;
+    }
+
+        .bw-lib .modal.fade {
+            opacity: 0 !important;
+        }
+
+        .bw-lib .modal.show {
+            opacity: 1 !important;
+        }
+
+    .bw-lib .modal-content {
+        transition: transform var(--transition-normal) !important;
+    }
+
+    .bw-lib .modal.fade .modal-content {
+        transform: scale(0.95) !important;
+    }
+
+    .bw-lib .modal.show .modal-content {
+        transform: scale(1) !important;
+    }
+
+    /* Export/Import Modal */
+    .bw-lib .export-modal-backdrop {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.7) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 1000 !important;
+        backdrop-filter: blur(4px) !important;
+    }
+
+    .bw-lib .export-modal {
+        background: var(--color-bg-panel) !important;
+        border: 1px solid var(--color-border-light) !important;
+        border-radius: var(--bw-radius-lg) !important;
+        box-shadow: var(--shadow-xl) !important;
+        width: 90% !important;
+        max-width: 700px !important;
+        max-height: 80vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .bw-lib .export-modal-header {
+        padding: var(--spacing-lg) !important;
+        border-bottom: 1px solid var(--color-border-light) !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+        .bw-lib .export-modal-header h3 {
+            margin: 0 !important;
+            color: var(--color-text-primary) !important;
+            font-size: 1.25rem !important;
+        }
+
+        .bw-lib .export-modal-header .btn-close {
+            background: none !important;
+            border: none !important;
+            color: var(--color-text-secondary) !important;
+            font-size: 1.5rem !important;
+            cursor: pointer !important;
+            padding: 0 !important;
+            width: 2rem !important;
+            height: 2rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: var(--bw-radius-sm) !important;
+            transition: all var(--transition-fast) !important;
+        }
+
+            .bw-lib .export-modal-header .btn-close:hover {
+                background: rgba(255, 255, 255, 0.1) !important;
+                color: var(--color-text-primary) !important;
+            }
+
+    .bw-lib .export-modal-body {
+        padding: var(--spacing-lg) !important;
+        overflow: auto !important;
+    }
+
+    .bw-lib .export-textarea {
+        width: 100% !important;
+        min-height: 400px !important;
+        background: var(--color-bg-dark) !important;
+        color: var(--color-text-primary) !important;
+        border: 1px solid var(--color-border-medium) !important;
+        border-radius: var(--bw-radius-md) !important;
+        padding: var(--spacing-md) !important;
+        font-family: "Courier New", monospace !important;
+        font-size: 0.875rem !important;
+        resize: vertical !important;
+    }
+
+        .bw-lib .export-textarea:focus {
+            outline: 2px solid var(--color-primary) !important;
+            outline-offset: 2px !important;
+            border-color: var(--color-primary) !important;
+        }
+
+    /* Utility classes */
+    .bw-lib .mb-2 {
+        margin-bottom: var(--spacing-sm) !important;
+    }
+
+    .bw-lib .mt-2 {
+        margin-top: var(--spacing-sm) !important;
+    }
+
+    .bw-lib .alert {
+        padding: var(--spacing-md) !important;
+        border-radius: var(--bw-radius-md) !important;
+        border: 1px solid !important;
+    }
+
+    .bw-lib .alert-danger {
+        background: rgba(220, 38, 38, 0.1) !important;
+        border-color: var(--color-danger) !important;
+        color: #fca5a5 !important;
+    }
+
+    /* Execute Flow Button */
+    .bw-lib .btn-execute-flow {
+        position: absolute !important;
+        right: 17px !important;
+        background: transparent !important;
+        border: none !important;
+        color: #16a34a !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all var(--transition-fast) !important;
+        font-size: 2.5rem !important;
+        margin-top: -4px !important;
+    }
+
+        .bw-lib .btn-execute-flow:hover:not(:disabled) {
+            color: #22c55e !important;
+            transform: scale(1.1) !important;
+        }
+
+        .bw-lib .btn-execute-flow:active:not(:disabled) {
+            transform: scale(1) !important;
+        }
+
+        .bw-lib .btn-execute-flow:disabled {
+            opacity: 0.4 !important;
+            cursor: not-allowed !important;
+            color: #16a34a !important;
+        }
+
+        .bw-lib .btn-execute-flow .spinner-border {
+            width: 1rem !important;
+            height: 1rem !important;
+            border-width: 2px !important;
+        }
+
+    /* Draggable/Selectable JSON */
+    .bw-lib .draggable-json {
+        user-select: none !important;
+    }
+
+    .bw-lib .selectable-json {
+        user-select: text !important;
+        cursor: text !important;
+    }
+
+        .bw-lib .selectable-json .json-key,
+        .bw-lib .selectable-json .json-value {
+            user-select: text !important;
+            cursor: text !important;
+        }
+
+    .bw-lib .json-key.draggable,
+    .bw-lib .json-value.draggable {
+        cursor: grab !important;
+        padding: 1px 3px !important;
+        border-radius: 2px !important;
+        transition: all 0.15s ease !important;
+    }
+
+    .bw-lib .json-key.draggable {
+        color: #93c5fd !important;
+        font-weight: 600 !important;
+    }
+
+        .bw-lib .json-key.draggable:hover {
+            background: rgba(147, 197, 253, 0.2) !important;
+            box-shadow: 0 0 0 1px rgba(147, 197, 253, 0.5) !important;
+        }
+
+        .bw-lib .json-key.draggable:active {
+            cursor: grabbing !important;
+            background: rgba(147, 197, 253, 0.3) !important;
+        }
+
+    .bw-lib .json-value.draggable {
+        color: #a78bfa !important;
+    }
+
+        .bw-lib .json-value.draggable:hover {
+            background: rgba(167, 139, 250, 0.2) !important;
+            box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.5) !important;
+        }
+
+        .bw-lib .json-value.draggable:active {
+            cursor: grabbing !important;
+            background: rgba(167, 139, 250, 0.3) !important;
+        }
+
+    /* Input with Preview Button */
+    .bw-lib .input-with-preview {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+        .bw-lib .input-with-preview input {
+            flex: 1 !important;
+            padding-right: 2.5rem !important;
+        }
+
+    /* IMPORTANT: btn-preview is inline-styled in markup (color/background/border). Override with !important. */
+    .bw-lib .btn-preview {
+        position: absolute !important;
+        right: 0.25rem !important;
+        background: none !important;
+        border: none !important;
+        color: #bfdbfe !important;
+        padding: 0.15rem 0.55rem !important;
+        border-radius: var(--bw-radius-sm) !important;
+        cursor: pointer !important;
+        font-size: 0.875rem !important;
+        transition: all var(--transition-fast) !important;
+        z-index: 1 !important;
+        transform: scale(.80) !important;
+        top: -15px;
+    }
+
+        .bw-lib .btn-preview:hover {
+            transform: scale(.90) !important;
+        }
+
+        .bw-lib .btn-preview:active {
+            transform: scale(0.90) !important;
+        }
+
+    .bw-lib .preview-button-container {
+        position: absolute !important;
+        top: 16px;
+        right: -5px;
+        display: inline-block !important;
+    }
+
+    .eye-icon-button {
+        background: none;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        color: var(--bw-text-secondary);
+        opacity: 0.7;
+        transition: opacity 0.15s ease, color 0.15s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .eye-icon-button:hover {
+        opacity: 1;
+        color: var(--bw-primary-color);
+    }
+
+    /* Preview Popover */
+    .bw-lib .preview-popover {
+        position: fixed !important;
+        z-index: 9999 !important;
+        min-width: 200px !important;
+        max-width: 350px !important;
+        animation: popoverSlideIn 0.2s ease !important;
+        pointer-events: none !important;
+    }
+
+        .bw-lib .preview-popover > * {
+            pointer-events: auto !important;
+        }
+
+    .bw-lib .preview-popover-arrow {
+        position: absolute !important;
+        bottom: -6px !important;
+        right: 1rem !important;
+        width: 12px !important;
+        height: 12px !important;
+        background: rgba(15, 23, 42, 0.95) !important;
+        border-right: 1px solid rgba(59, 130, 246, 0.4) !important;
+        border-bottom: 1px solid rgba(59, 130, 246, 0.4) !important;
+        transform: rotate(45deg) !important;
+    }
+
+    .bw-lib .preview-popover-content {
+        background: rgba(15, 23, 42, 0.95) !important;
+        border: 1px solid rgba(59, 130, 246, 0.4) !important;
+        border-radius: var(--bw-radius-md) !important;
+        padding: 0.75rem !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+        backdrop-filter: blur(8px) !important;
+    }
+
+    .bw-lib .preview-popover-label {
+        color: #bfdbfe !important;
+        font-weight: 600 !important;
+        font-size: 0.7rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .bw-lib .preview-popover-value {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+        font-size: 0.8rem !important;
+        color: #e5e7eb !important;
+        word-break: break-all !important;
+        line-height: 1.4 !important;
+        max-height: 150px !important;
+        overflow: auto !important;
+    }
+
+    /* Mapping Preview Display (deprecated - kept for compatibility) */
+    .bw-lib .mapping-preview {
+        margin-top: 0.5rem !important;
+        padding: 0.5rem 0.75rem !important;
+        background: rgba(59, 130, 246, 0.1) !important;
+        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        border-radius: var(--bw-radius-sm) !important;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+        font-size: 0.75rem !important;
+        animation: slideDown 0.2s ease !important;
+    }
+
+    .bw-lib .mapping-preview-label {
+        color: #bfdbfe !important;
+        font-weight: 600 !important;
+        margin-right: 0.5rem !important;
+    }
+
+    .bw-lib .mapping-preview-value {
+        color: #e5e7eb !important;
+        word-break: break-all !important;
+    }
+
+    /* Form Control Focus States (Bootstrap override) */
+    .bw-lib .form-control:focus,
+    .bw-lib .form-select:focus {
+        border-color: var(--color-info) !important;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25) !important;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast) !important;
+    }
+
+    /* Button Transitions */
+    .bw-lib .btn {
+        transition: all var(--transition-fast) !important;
+    }
+
+        .bw-lib .btn:hover:not(:disabled) {
+            transform: translateY(-1px) !important;
+            box-shadow: var(--bw-shadow-md) !important;
+        }
+
+        .bw-lib .btn:active:not(:disabled) {
+            transform: translateY(0) !important;
+        }
+
+    /* ==========================================================================
+   Light theme component overrides (lifted “not-dark”)
+   ========================================================================== */
+
+    .bw-lib[data-theme="light"] .node-editor-header,
+    [data-theme="light"] .bw-lib .node-editor-header {
+        border-bottom-color: rgba(226, 232, 240, 0.14) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+
+    .bw-lib[data-theme="light"] .node-name-input,
+    [data-theme="light"] .bw-lib .node-name-input {
+        background: rgba(255, 255, 255, 0.10) !important;
+        border-color: rgba(226, 232, 240, 0.20) !important;
+        color: var(--color-text-primary) !important;
+    }
+
+    .bw-lib[data-theme="light"] .node-editor-panel,
+    [data-theme="light"] .bw-lib .node-editor-panel {
+        background: rgba(255, 255, 255, 0.07) !important;
+        border-right-color: rgba(226, 232, 240, 0.12) !important;
+    }
+
+    .bw-lib[data-theme="light"] .panel-header,
+    [data-theme="light"] .bw-lib .panel-header {
+        border-bottom-color: rgba(226, 232, 240, 0.12) !important;
+        background: rgba(255, 255, 255, 0.10) !important;
+    }
+
+    .bw-lib[data-theme="light"] .panel-caption,
+    [data-theme="light"] .bw-lib .panel-caption {
+        color: var(--color-text-secondary) !important;
+    }
+
+    .bw-lib[data-theme="light"] .panel-section-header,
+    [data-theme="light"] .bw-lib .panel-section-header {
+        color: var(--color-text-primary) !important;
+        border-bottom-color: rgba(226, 232, 240, 0.10) !important;
+    }
+
+    .bw-lib[data-theme="light"] .payload-preview,
+    [data-theme="light"] .bw-lib .payload-preview {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border-top-color: rgba(226, 232, 240, 0.10) !important;
+        color: var(--color-text-primary) !important;
+    }
+
+    .bw-lib[data-theme="light"] .payload-field-chip,
+    [data-theme="light"] .bw-lib .payload-field-chip {
+        background: rgba(255, 255, 255, 0.07) !important;
+        border-color: rgba(226, 232, 240, 0.14) !important;
+        color: var(--color-text-primary) !important;
+    }
+
+        .bw-lib[data-theme="light"] .payload-field-chip:hover,
+        [data-theme="light"] .bw-lib .payload-field-chip:hover {
+            border-color: rgba(96, 165, 250, 0.65) !important;
+        }
+
+    .bw-lib[data-theme="light"] .mapping-input,
+    [data-theme="light"] .bw-lib .mapping-input {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(226, 232, 240, 0.18) !important;
+        color: var(--color-text-primary) !important;
+    }
+
+        .bw-lib[data-theme="light"] .mapping-input:focus,
+        [data-theme="light"] .bw-lib .mapping-input:focus {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            border-color: var(--color-info) !important;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.22) !important;
+        }
+
+    .bw-lib[data-theme="light"] .json-controls,
+    [data-theme="light"] .bw-lib .json-controls {
+        border-bottom-color: rgba(226, 232, 240, 0.12) !important;
+    }
+
+    .bw-lib[data-theme="light"] .json-search,
+    .bw-lib[data-theme="light"] .json-filter,
+    [data-theme="light"] .bw-lib .json-search,
+    [data-theme="light"] .bw-lib .json-filter {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        border-color: rgba(226, 232, 240, 0.16) !important;
+        color: var(--color-text-primary) !important;
+    }
+
+        .bw-lib[data-theme="light"] .json-search:focus,
+        .bw-lib[data-theme="light"] .json-filter:focus,
+        [data-theme="light"] .bw-lib .json-search:focus,
+        [data-theme="light"] .bw-lib .json-filter:focus {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            border-color: rgba(96, 165, 250, 0.55) !important;
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.18) !important;
+        }
+
+        .bw-lib[data-theme="light"] .json-search::placeholder,
+        [data-theme="light"] .bw-lib .json-search::placeholder {
+            color: rgba(213, 222, 234, 0.75) !important;
+        }
+
+    /* Inline-styled eye button override in lifted theme */
+    .bw-lib[data-theme="light"] .btn-preview,
+    [data-theme="light"] .bw-lib .btn-preview {
+        color: rgba(234, 240, 248, 0.95) !important;
+        border-color: rgba(226, 232, 240, 0.10) !important;
+    }
+
+    /* Light theme form element fixes (lifted, but still “dim”) */
+    .bw-lib[data-theme="light"] select,
+    .bw-lib[data-theme="light"] .form-select,
+    .bw-lib[data-theme="light"] .form-control,
+    .bw-lib[data-theme="light"] input[type="text"],
+    .bw-lib[data-theme="light"] input[type="number"],
+    .bw-lib[data-theme="light"] textarea,
+    [data-theme="light"] .bw-lib select,
+    [data-theme="light"] .bw-lib .form-select,
+    [data-theme="light"] .bw-lib .form-control,
+    [data-theme="light"] .bw-lib input[type="text"],
+    [data-theme="light"] .bw-lib input[type="number"],
+    [data-theme="light"] .bw-lib textarea {
+        background-color: rgba(255, 255, 255, 0.08) !important;
+        color: var(--color-text-primary) !important;
+        border-color: rgba(226, 232, 240, 0.18) !important;
+    }
+
+        .bw-lib[data-theme="light"] select option,
+        .bw-lib[data-theme="light"] .form-select option,
+        [data-theme="light"] .bw-lib select option,
+        [data-theme="light"] .bw-lib .form-select option {
+            background-color: #2a3956 !important;
+            color: var(--color-text-primary) !important;
+        }
+
+        .bw-lib[data-theme="light"] select:focus,
+        .bw-lib[data-theme="light"] .form-select:focus,
+        .bw-lib[data-theme="light"] .form-control:focus,
+        [data-theme="light"] .bw-lib select:focus,
+        [data-theme="light"] .bw-lib .form-select:focus,
+        [data-theme="light"] .bw-lib .form-control:focus {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            color: var(--color-text-primary) !important;
+            border-color: var(--bw-primary-color) !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14) !important;
+        }
+
+    /* ==========================================================================
+   Drawflow (Scoped under .bw-lib)
+   ========================================================================== */
+
+    .bw-lib .drawflow-host {
+        width: 100% !important;
+        height: 100vh !important;
+        position: relative !important;
+        overflow: hidden !important;
+        border: 1px solid var(--df-border) !important;
+        border-radius: 0.75rem !important;
+        background: var(--df-canvas) !important;
+        background-image: radial-gradient(transparent 0 10px, rgba(148, 163, 184, 0.02) 10px), linear-gradient(0deg, rgba(148, 163, 184, 0.02), rgba(148, 163, 184, 0.02)) !important;
+        background-size: 16px 16px, 100% 100% !important;
+        color: var(--df-text) !important;
+    }
+
+    /* Node Base */
+    .bw-lib .drawflow .drawflow-node,
+    .bw-lib .drawflow-node {
+        width: var(--df-title-width, 200px) !important;
+        min-width: 150px !important;
+        background-color: var(--df-node) !important;
+        border-radius: var(--df-radius) !important;
+        border: 1px solid var(--df-border) !important;
+        box-shadow: 0 10px 24px var(--df-shadow) !important;
+        color: var(--df-text) !important;
+        padding-bottom: 6px !important;
+        transition: box-shadow 0.2s ease, transform 0.2s ease !important;
+    }
+
+        .bw-lib .drawflow .drawflow-node .drawflow_content_node,
+        .bw-lib .drawflow-node .drawflow_content_node {
+            display: block !important;
+            margin-top: 15px !important;
+        }
+
+        .bw-lib .drawflow-node .inputs {
+            padding-top: 13px !important;
+        }
+
+        .bw-lib .drawflow-node .outputs {
+            padding-top: 13px !important;
+        }
+
+            .bw-lib .drawflow-node .outputs .computed_node .port_label {
+                color: #72b663 !important;
+            }
+
+        /* Ports */
+        .bw-lib .drawflow .drawflow-node .input,
+        .bw-lib .drawflow .drawflow-node .output,
+        .bw-lib .drawflow-node .input,
+        .bw-lib .drawflow-node .output {
+            background: var(--df-port) !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2) !important;
+        }
+
+            .bw-lib .drawflow .drawflow-node .input:hover,
+            .bw-lib .drawflow .drawflow-node .output:hover,
+            .bw-lib .drawflow-node .input:hover,
+            .bw-lib .drawflow-node .output:hover {
+                background: var(--df-port-hover) !important;
+                transform: scale(1.15) !important;
+                box-shadow: 0 0 0 3px rgba(110, 160, 255, 0.3) !important;
+            }
+
+        /* Title bar */
+        .bw-lib .drawflow .title-container,
+        .bw-lib .drawflow-node .title-container {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 2 !important;
+            width: 100% !important;
+            height: 24px !important;
+            background: linear-gradient(90deg, var(--df-node-2), var(--df-node)) !important;
+            border-radius: var(--df-radius) var(--df-radius) 0 0 !important;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.35) !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+
+        .bw-lib .drawflow .selected .title-container,
+        .bw-lib .drawflow-node.selected .title-container {
+            background: linear-gradient(90deg, var(--df-accent), var(--df-accent-2)) !important;
+        }
+
+        .bw-lib .drawflow .title,
+        .bw-lib .drawflow-node .title {
+            color: var(--df-heading) !important;
+            padding-left: 30px !important;
+            padding-right: 24px !important;
+            white-space: nowrap !important;
+            line-height: 24px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            flex: 1 !important;
+        }
+
+        .bw-lib .drawflow .drawflow-node.selected .title,
+        .bw-lib .drawflow-node.selected .title {
+            color: #020617 !important;
+        }
+
+        /* Selected node */
+        .bw-lib .drawflow .drawflow-node.selected,
+        .bw-lib .drawflow-node.selected {
+            background: var(--df-node-2) !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 0 2px var(--df-accent) !important;
+            transform: translateY(-1px) !important;
+        }
+
+    /* Type box */
+    .bw-lib .node-type-id-container {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        background: var(--df-accent) !important;
+        z-index: 3 !important;
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: var(--df-radius) 0 var(--df-radius) 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .bw-lib .drawflow .drawflow-node.selected .node-type-id-container,
+    .bw-lib .drawflow-node.selected .node-type-id-container {
+        background: transparent !important;
+    }
+
+    .bw-lib .node-type-id {
+        text-align: center !important;
+        font-size: 16px !important;
+        color: var(--df-heading) !important;
+        margin: 0 !important;
+        text-shadow: 0 0 4px rgba(0,0,0,0.6) !important;
+    }
+
+    /* Text helpers */
+    .bw-lib .drawflow .text-muted,
+    .bw-lib .drawflow-node .text-muted {
+        color: var(--df-text-muted) !important;
+    }
+
+    .bw-lib .drawflow .text-weak,
+    .bw-lib .drawflow-node .text-weak {
+        color: var(--df-text-weak) !important;
+    }
+
+    /* Port labels */
+    .bw-lib .drawflow .drawflow-node .port_type,
+    .bw-lib .drawflow-node .port_type {
+        color: var(--df-text-weak) !important;
+        font-size: 10px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.02em !important;
+    }
+
+    .bw-lib .drawflow .drawflow-node .port_label,
+    .bw-lib .drawflow-node .port_label {
+        color: var(--df-text-muted) !important;
+        font-size: 12px !important;
+    }
+
+    /* Wires (with flow animation) */
+    .bw-lib .drawflow .connection .main-path,
+    .bw-lib .connection .main-path {
+        fill: none !important;
+        stroke: var(--df-wire) !important;
+        stroke-width: 3 !important;
+        stroke-linecap: round !important;
+        opacity: 0.75 !important;
+        stroke-dasharray: 21 4 !important;
+        animation: df-flow 0.8s linear infinite !important;
+        transition: opacity 0.2s ease, stroke-width 0.2s ease !important;
+    }
+
+        .bw-lib .drawflow .connection.selected .main-path,
+        .bw-lib .drawflow .connection .main-path.selected,
+        .bw-lib .connection.selected .main-path,
+        .bw-lib .connection .main-path.selected {
+            stroke: var(--df-wire-active) !important;
+            opacity: 1 !important;
+        }
+
+    /* Drawflow error state */
+    .bw-lib .drawflow .drawflow-node.node-error,
+    .bw-lib .drawflow-node.node-error {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3) !important;
+        animation: errorPulse 2s ease-in-out infinite !important;
+    }
+
+        .bw-lib .drawflow .drawflow-node.node-error .title-container,
+        .bw-lib .drawflow-node.node-error .title-container {
+            background: rgba(220, 38, 38, 0.2) !important;
+        }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 992px) {
+    .bw-lib .node-editor-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .bw-lib .node-editor-content {
+        height: 93vh !important;
+    }
+}
+
+/* ==========================================================================
+   Keyframes (global; referenced by .bw-lib rules)
+   ========================================================================== */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes popoverSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseBar {
+    0%, 100% {
+        opacity: 0.3;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+@keyframes successPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+@keyframes errorPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.5);
+    }
+}
+
+/* Node status animations - must be global because Drawflow nodes are created dynamically */
+.processing-bar .title-container {
+    animation: pulseBar 1s ease-in-out infinite;
+}
+
+.node-error {
+    animation: errorPulse 2s ease-in-out infinite;
+}
+
+@keyframes df-flow {
+    from {
+        stroke-dashoffset: 0;
+    }
+
+    to {
+        stroke-dashoffset: -25;
+    }
+}

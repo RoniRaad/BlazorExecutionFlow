@@ -1,11 +1,11 @@
 @page "/"
 @page "/workflows"
 @page "/workflow/{WorkflowId}"
-@using BlazorExecutionFlow.Components
-@using BlazorExecutionFlow.Helpers
-@using BlazorExecutionFlow.Models
-@using BlazorExecutionFlow.Models.NodeV2
-@using BlazorExecutionFlow.Services
+@using BlazorWorkflow.Components
+@using BlazorWorkflow.Helpers
+@using BlazorWorkflow.Models
+@using BlazorWorkflow.Models.NodeV2
+@using BlazorWorkflow.Services
 @using ExampleApp.Components.Layout
 @using ExampleApp.Components
 @using System.Collections.Frozen
@@ -15,7 +15,7 @@
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
-<div style="height: 100vh; overflow: hidden; background: var(--bef-background); color: var(--bef-text-primary); position: relative;">
+<div style="height: 100vh; overflow: hidden; background: var(--bw-background); color: var(--bw-text-primary); position: relative;">
     <div style="position: fixed; top: 1rem; right: 1rem; z-index: 1000;">
         <ThemeToggle @rendermode="InteractiveServer" />
     </div>
@@ -28,7 +28,7 @@
     }
     else if (currentView == ViewState.WorkflowEditor && !string.IsNullOrEmpty(currentWorkflowId))
     {
-        <BlazorExecutionFlow.Components.WorkflowEditor
+        <WorkflowEditor
             @rendermode="InteractiveServer"
             WorkflowId="@currentWorkflowId"
             OnBackToWorkflows="HandleBackToWorkflows" />

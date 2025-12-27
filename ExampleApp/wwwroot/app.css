@@ -1,36 +1,36 @@
 /* Global CSS Variables */
 /* Default to dark theme, can be overridden by [data-theme="light"] */
 :root {
-    --bef-primary-color: #6366f1;
-    --bef-primary-hover: #7c3aed;
-    --bef-primary-light: #818cf8;
-    --bef-secondary-color: #06b6d4;
-    --bef-background: #192138;
-    --bef-surface: #1f2937;
-    --bef-surface-elevated: #2d3748;
-    --bef-border-color: #374151;
-    --bef-text-primary: #f9fafb;
-    --bef-text-secondary: #9ca3af;
-    --bef-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
-    --bef-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --bef-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    --bef-radius: 8px;
-    --bef-radius-lg: 12px;
+    --bw-primary-color: #6366f1;
+    --bw-primary-hover: #7c3aed;
+    --bw-primary-light: #818cf8;
+    --bw-secondary-color: #06b6d4;
+    --bw-background: #192138;
+    --bw-surface: #1f2937;
+    --bw-surface-elevated: #2d3748;
+    --bw-border-color: #374151;
+    --bw-text-primary: #f9fafb;
+    --bw-text-secondary: #9ca3af;
+    --bw-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    --bw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --bw-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --bw-radius: 8px;
+    --bw-radius-lg: 12px;
 }
 
 /* Light Theme Override - Slate & Indigo */
 [data-theme="light"] {
-    --bef-primary-color: #6366f1;
-    --bef-primary-hover: #4f46e5;
-    --bef-primary-light: #818cf8;
-    --bef-secondary-color: #8b5cf6;
-    --bef-background: #e2e8f0;
-    --bef-surface: #f1f5f9;
-    --bef-surface-elevated: #f8fafc;
-    --bef-border-color: #cbd5e1;
-    --bef-text-primary: #0f172a;
-    --bef-text-secondary: #475569;
-    --bef-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --bef-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-    --bef-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --bw-primary-color: #6366f1;
+    --bw-primary-hover: #4f46e5;
+    --bw-primary-light: #818cf8;
+    --bw-secondary-color: #8b5cf6;
+    --bw-background: #e2e8f0;
+    --bw-surface: #f1f5f9;
+    --bw-surface-elevated: #f8fafc;
+    --bw-border-color: #cbd5e1;
+    --bw-text-primary: #0f172a;
+    --bw-text-secondary: #475569;
+    --bw-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --bw-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --bw-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }

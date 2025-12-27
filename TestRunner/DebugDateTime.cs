@@ -1,4 +1,4 @@
-using BlazorExecutionFlow.Flow.BaseNodes;
+using BlazorWorkflow.Flow.BaseNodes;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 

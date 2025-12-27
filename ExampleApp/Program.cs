@@ -1,7 +1,7 @@
 using ExampleApp.Components;
 using ExampleApp.Services;
-using BlazorExecutionFlow.Extensions;
-using BlazorExecutionFlow.Helpers;
+using BlazorWorkflow.Extensions;
+using BlazorWorkflow.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 

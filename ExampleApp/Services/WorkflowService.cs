@@ -1,4 +1,4 @@
-using BlazorExecutionFlow.Models;
+using BlazorWorkflow.Models;
 
 namespace ExampleApp.Services;
 
