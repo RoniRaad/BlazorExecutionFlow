@@ -1,21 +1,21 @@
 .theme-toggle-btn {
     background: transparent;
-    border: 1px solid var(--bef-border-color);
-    border-radius: var(--bef-radius);
+    border: 1px solid var(--bw-border-color);
+    border-radius: var(--bw-radius);
     padding: 0.5rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: var(--bef-text-primary);
+    color: var(--bw-text-primary);
     transition: all var(--transition-fast, 0.15s ease-in-out);
     width: 40px;
     height: 40px;
 }
 
 .theme-toggle-btn:hover {
-    background: var(--bef-surface-elevated);
-    border-color: var(--bef-primary-color);
+    background: var(--bw-surface-elevated);
+    border-color: var(--bw-primary-color);
     transform: scale(1.05);
 }
 

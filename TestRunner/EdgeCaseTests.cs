@@ -1,5 +1,5 @@
-using BlazorExecutionFlow.Flow.BaseNodes;
-using BlazorExecutionFlow.Testing;
+using BlazorWorkflow.Flow.BaseNodes;
+using BlazorWorkflow.Testing;
 using Xunit;
 
 namespace TestRunner

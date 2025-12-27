@@ -1,11 +1,11 @@
 @page "/"
 @page "/workflows"
 @page "/workflow/{WorkflowId}"
-@using BlazorExecutionFlow.Components
-@using BlazorExecutionFlow.Helpers
-@using BlazorExecutionFlow.Models
-@using BlazorExecutionFlow.Models.NodeV2
-@using BlazorExecutionFlow.Services
+@using BlazorWorkflow.Components
+@using BlazorWorkflow.Helpers
+@using BlazorWorkflow.Models
+@using BlazorWorkflow.Models.NodeV2
+@using BlazorWorkflow.Services
 @using ExampleApp.Components.Layout
 @using ExampleApp.Components
 @using System.Collections.Frozen
@@ -15,7 +15,7 @@
 
 <PageTitle>@GetPageTitle()</PageTitle>
 
-<div style="height: 100vh; overflow: hidden; background: var(--bef-background); color: var(--bef-text-primary); position: relative;">
+<div style="height: 100vh; overflow: hidden; background: var(--bw-background); color: var(--bw-text-primary); position: relative;">
     <div style="position: fixed; top: 1rem; right: 1rem; z-index: 1000;">
         <ThemeToggle @rendermode="InteractiveServer" />
     </div>
@@ -24,12 +24,11 @@
     {
         <WorkflowManager
             @rendermode="InteractiveServer"
-            OnEditWorkflow="HandleEditWorkflow"
-            OnExecuteWorkflow="HandleExecuteWorkflow" />
+            OnEditWorkflow="HandleEditWorkflow" />
     }
     else if (currentView == ViewState.WorkflowEditor && !string.IsNullOrEmpty(currentWorkflowId))
     {
-        <BlazorExecutionFlow.Components.WorkflowEditor
+        <WorkflowEditor
             @rendermode="InteractiveServer"
             WorkflowId="@currentWorkflowId"
             OnBackToWorkflows="HandleBackToWorkflows" />
@@ -85,37 +84,5 @@
         currentView = ViewState.WorkflowList;
         currentWorkflowId = null;
         StateHasChanged();
-    }
-
-    private async Task HandleExecuteWorkflow((string WorkflowId, string Environment) executionRequest)
-    {
-        var workflow = WorkflowService.GetWorkflow(executionRequest.WorkflowId);
-        if (workflow == null) return;
-
-        var environmentVariables = EnvVarService.GetAllVariables(executionRequest.Environment);
-        var context = new GraphExecutionContext()
-        {
-            Parameters = workflow.Inputs.ToFrozenDictionary(),
-            EnvironmentVariables = environmentVariables.ToFrozenDictionary()
-        };
-
-        await workflow.FlowGraph.Run(context).ConfigureAwait(false);
-
-        var output = context?.SharedContext.GetByPath("workflow.output");
-        var jsonObject = output?.AsObject().ToDictionary(x => x.Key, x => (object)x.Value);
-
-        var execution = new WorkflowExecution
-        {
-            Id = Guid.NewGuid().ToString(),
-            ExecutedAt = DateTime.Now,
-            Success = !workflow.FlowGraph.Nodes.Any(x => x.Value.LastException is not null),
-            Duration = DateTimeOffset.Now - context!.StartTime,
-            Output = jsonObject ?? []
-        };
-
-        workflow.PreviousExecutions.Add(execution);
-        workflow.ModifiedAt = DateTime.Now;
-        WorkflowService.UpdateWorkflow(workflow);
-        await InvokeAsync(StateHasChanged);
     }
 }
